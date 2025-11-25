@@ -6,6 +6,7 @@ import {
   CalendarCheck,
   FileChartColumn,
   GalleryVerticalEnd,
+  GraduationCap,
   SquareTerminal,
   Users,
 } from "lucide-react"
@@ -31,7 +32,7 @@ const data = {
   teams: [
     {
       name: "Senac Minas",
-      logo: GalleryVerticalEnd,
+      logo: GraduationCap,
       plan: "Administrador",
     },
     
