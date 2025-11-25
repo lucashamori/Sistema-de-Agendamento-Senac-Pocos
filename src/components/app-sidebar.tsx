@@ -3,8 +3,11 @@
 import * as React from "react"
 import {
   Bot,
+  CalendarCheck,
+  FileChartColumn,
   GalleryVerticalEnd,
   SquareTerminal,
+  Users,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -37,7 +40,7 @@ const data = {
     {
       title: "Agendamento",
       url: "#",
-      icon: SquareTerminal,
+      icon: CalendarCheck,
       isActive: true,
       items: [
         {
@@ -49,7 +52,7 @@ const data = {
     {
       title: "Relatórios",
       url: "#",
-      icon: Bot,
+      icon: FileChartColumn,
       items: [
         {
           title: "Exibir Relatórios",
@@ -62,6 +65,28 @@ const data = {
        
       ],
     },
+    {
+      title: "Cadastros",
+      url: "#",
+      icon: Users,
+      items: [
+        {
+          title: "Cadastrar Usuario",
+          url: "#",
+        },
+        {
+          title: "Cadastrar Turmas",
+          url: "#",
+        },
+        {
+          title: "Cadastrar Equipamentos",
+          url: "#",
+        },
+       
+      ],
+    },
+
+    
    
     
   ],
