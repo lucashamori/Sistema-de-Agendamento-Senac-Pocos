@@ -2,14 +2,16 @@
 
 import * as React from "react"
 import {
-  Bot,
   CalendarCheck,
   FileChartColumn,
-  GalleryVerticalEnd,
   GraduationCap,
-  SquareTerminal,
   Users,
+  Loader2
 } from "lucide-react"
+
+import { auth } from "@/lib/firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import { getDadosUsuarioSidebar } from "@/app/actions/auth" // Importe sua server action
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -22,20 +24,14 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
+// DADOS ESTÁTICOS (Menu Completo)
+const DATA_MENU = {
   teams: [
     {
       name: "Senac Minas",
       logo: GraduationCap,
-      plan: "Administrador",
+      plan: "LabManager",
     },
-    
   ],
   navMain: [
     {
@@ -46,7 +42,11 @@ const data = {
       items: [
         {
           title: "Agendar Laboratório",
-          url: "#",
+          url: "/agendamentos/novo",
+        },
+        {
+           title: "Minha Agenda",
+           url: "/agendamentos/meus",
         },
       ],
     },
@@ -56,55 +56,101 @@ const data = {
       icon: FileChartColumn,
       items: [
         {
-          title: "Exibir Relatórios",
-          url: "#",
-        },
-        {
           title: "Histórico",
-          url: "#",
+          url: "/relatorios/historico",
         },
-       
       ],
     },
     {
-      title: "Cadastros",
+      title: "Cadastros", // <--- Este item será filtrado
       url: "#",
       icon: Users,
       items: [
         {
-          title: "Cadastrar Usuario",
+          title: "Cadastrar Docentes",
+          url: "/cadastroDocentes",
+        },
+        {
+          title: "Cadastrar Administrativos",
           url: "#",
         },
         {
           title: "Cadastrar Turmas",
           url: "#",
         },
-        {
-          title: "Cadastrar Equipamentos",
-          url: "#",
-        },
-       
       ],
     },
-
-    
-   
-    
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  // Estado para guardar o menu filtrado
+  const [menuItems, setMenuItems] = React.useState(DATA_MENU.navMain)
+  
+  // Estado para guardar dados do usuário real (para o rodapé)
+  const [userData, setUserData] = React.useState({
+    name: "Carregando...",
+    email: "...",
+    avatar: "",
+  })
+
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // 1. Busca dados no Banco (Neon)
+        const infoBanco = await getDadosUsuarioSidebar(user.uid)
+        
+        if (infoBanco) {
+          // Atualiza o rodapé com nome real
+          setUserData({
+            name: infoBanco.nomeUsuario,
+            email: user.email || "",
+            avatar: "", // Se tiver foto no futuro, coloca aqui
+          })
+
+          // 2. LÓGICA DE FILTRO DA SIDEBAR
+          const cargo = infoBanco.cargo // "Administrador" ou "Docente"
+
+          if (cargo === "Administrador") {
+            // Admin vê TUDO
+            setMenuItems(DATA_MENU.navMain)
+          } else {
+            // Docente vê apenas o que NÃO é "Cadastros"
+            const menuFiltrado = DATA_MENU.navMain.filter(item => 
+              item.title !== "Cadastros"
+            )
+            setMenuItems(menuFiltrado)
+          }
+        }
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        {/* O TeamSwitcher já se vira sozinho para buscar os dados dele */}
+        <TeamSwitcher  /> 
       </SidebarHeader>
+      
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        
+        {loading ? (
+           <div className="flex justify-center p-4">
+             <Loader2 className="animate-spin" />
+           </div>
+        ) : (
+           /* Passamos o menuItems (que pode estar filtrado) em vez do estático */
+           <NavMain items={menuItems} />
+        )}
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
