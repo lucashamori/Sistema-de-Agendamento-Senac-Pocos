@@ -42,6 +42,6 @@ Siga os passos abaixo para configurar o ambiente de desenvolvimento.
 ### 2. Clonar o repositório
 
 ```bash
-git clone [https://github.com/alunosDesenvolvimentoSenac/projeto-integrador.git](https://github.com/alunosDesenvolvimentoSenac/projeto-integrador.git)
+git clone (https://github.com/alunosDesenvolvimentoSenac/projeto-integrador.git)
 cd projeto-integrador
 npm install
