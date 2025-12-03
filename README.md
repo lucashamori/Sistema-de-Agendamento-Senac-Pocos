@@ -39,9 +39,38 @@ Siga os passos abaixo para configurar o ambiente de desenvolvimento.
 * Conta no [Neon.tech](https://neon.tech) (Postgres)
 * Projeto no [Firebase Console](https://console.firebase.google.com/)
 
-### 2. Clonar o repositório
+### 2. Clonar o repositório e instalar dependências
 
 ```bash
 git clone (https://github.com/alunosDesenvolvimentoSenac/projeto-integrador.git)
 cd projeto-integrador
 npm install
+```
+
+### 3. Configurar Variáveis de Ambiente
+
+Crie um arquivo .env na raiz do projeto e preencha com suas chaves:
+
+```bash
+# --- NEON DATABASE (Pegar no Console do Neon) ---
+# Selecione a opção "Pooled connection" se disponível
+DATABASE_URL="postgres://usuario:senha@ep-exemplo.aws.neon.tech/labmanager?sslmode=require"
+
+# --- FIREBASE CONFIG (Pegar no Console do Firebase > Project Settings) ---
+NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy..."
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="seu-app.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID="seu-app"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="seu-app.firebasestorage.app"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="123..."
+NEXT_PUBLIC_FIREBASE_APP_ID="1:123..."
+```
+
+### 4. Sincronizar Banco de Dados (Drizzle)
+```bash
+npx drizzle-kit introspect
+```
+
+### 5. Rodar o servidor
+```bash
+npm run dev
+```
