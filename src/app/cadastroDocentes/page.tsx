@@ -1,8 +1,7 @@
-import { FormularioDocente } from "@/components/formularioDocente" // Importe o componente novo
-
-import { listarUnidades } from "@/app/actions/admin"; // Server Action para buscar dados
-
-import { AppSidebar } from "@/components/app-sidebar"
+import { FormularioDocente } from "@/components/formularioDocente"; // Verifique se o nome do arquivo está correto (formulario-docente ou formularioDocente)
+import { listarUnidades } from "@/app/actions/admin";
+import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,18 +9,17 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/breadcrumb";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
-export default async function CadastrarDocentesPage() {
+export default async function Page() {
   
-  // Busca as unidades no banco antes de renderizar a tela (Server Side)
-  const unidades = await listarUnidades();
+  // Busca dados no servidor (Neon) antes de renderizar
+  const listaUnidades = await listarUnidades();
 
   return (
     
@@ -39,28 +37,27 @@ export default async function CadastrarDocentesPage() {
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
                     <BreadcrumbLink href="/dashboard">
-                      Sistema de Gerenciamento
+                      Sistema LabManager
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>Cadastrar Docente</BreadcrumbPage>
+                    <BreadcrumbPage>Cadastrar Docentes</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
           </header>
           
-          {/* Área do Formulário */}
           <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
             <div className="w-full max-w-sm">
-                {/* Passamos as unidades para o formulário cliente */}
-                <FormularioDocente unidadesDisponiveis={unidades} />
+                {/* CORREÇÃO AQUI: O nome da prop deve ser 'unidades' */}
+                <FormularioDocente unidades={listaUnidades} />
             </div>
           </div>
-
+          
         </SidebarInset>
       </SidebarProvider>
     
-  )
+  );
 }

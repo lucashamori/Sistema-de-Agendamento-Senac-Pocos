@@ -29,9 +29,9 @@ export async function cadastrarDocenteNoBanco(
       // matricula: "DOC-" + Math.floor(Math.random() * 1000) // Opcional: Gerar matrícula
     });
 
-    return { sucesso: true };
+    return { success: true, message: "Cadastro realizado com sucesso!" };
   } catch (error) {
     console.error("Erro ao salvar docente no banco:", error);
-    return { sucesso: false, erro: "Erro ao vincular dados no sistema." };
+    return { success: false, message: "Erro ao vincular dados no sistema." };
   }
 }
