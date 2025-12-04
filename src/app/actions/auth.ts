@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from "@/db";
-import { perfis, usuarios } from "@/db/migrations/schema";
+import { perfis, unidades, usuarios } from "@/db/migrations/schema";
 import { eq } from "drizzle-orm";
 
 export async function sincronizarUsuario(uid: string, email: string, nome: string) {
@@ -68,5 +68,27 @@ export async function verificarPermissaoUsuario(uidFirebase: string) {
   } catch (error) {
     console.error("Erro no server action:", error);
     return { sucesso: false, mensagem: "Erro de conexão com o banco de dados." };
+  }
+}
+
+export async function getDadosUsuarioSidebar(uidFirebase: string) {
+  try {
+    const resultado = await db
+      .select({
+        nomeUsuario: usuarios.nome,
+        nomeUnidade: unidades.descricaoUnidade,
+        cargo: perfis.descricaoPerfil // Aqui virá "Administrador", "Docente", etc.
+      })
+      .from(usuarios)
+      .innerJoin(unidades, eq(usuarios.idUnidade, unidades.idUnidade))
+      .innerJoin(perfis, eq(usuarios.idPerfil, perfis.idPerfil))
+      .where(eq(usuarios.uidFirebase, uidFirebase));
+
+    if (!resultado[0]) return null;
+
+    return resultado[0];
+  } catch (error) {
+    console.error("Erro ao buscar dados da sidebar:", error);
+    return null;
   }
 }
