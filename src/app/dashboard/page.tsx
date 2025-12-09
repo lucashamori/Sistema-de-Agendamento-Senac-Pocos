@@ -22,7 +22,7 @@ import {
   CalendarDays, 
   Copy,
   Trash2,
-  Info // Importado novo ícone
+  Info 
 } from "lucide-react"
 
 // --- IMPORTS DE AUTENTICAÇÃO ---
@@ -109,7 +109,7 @@ interface Agendamento {
   disciplina: string
   labId?: number
   groupId?: string
-  observacao?: string // Novo campo opcional
+  observacao?: string 
 }
 
 // DADOS ESTÁTICOS DOS LABORATÓRIOS
@@ -330,7 +330,7 @@ export default function Dashboard() {
               if (isLoopToday) {
                   if (p === 'Manhã' && currentHour >= 12) skip = true;
                   if (p === 'Tarde' && currentHour >= 18) skip = true;
-                  if (p === 'Noite' && currentHour >= 23) skip = true;
+                  if (p === 'Noite' && currentHour >= 22) skip = true;
               }
 
               if (!skip) {
@@ -345,7 +345,7 @@ export default function Dashboard() {
                     disciplina: data.disciplina || "Sem disciplina",
                     labId: data.labId,
                     groupId: groupId,
-                    observacao: data.observacao // Salva a observação
+                    observacao: data.observacao 
                   });
               }
         });
@@ -626,7 +626,8 @@ export default function Dashboard() {
                   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
                   const isAdmin = currentUser?.role === "ADMIN";
-                  const isBlockedForUser = (isPastDay || isWeekend) && !isAdmin;
+                  
+                  const isBlockedForUser = (isPastDay && !isAdmin) || (isWeekend && !isAdmin);
 
                   return (
                     <div 
@@ -642,17 +643,26 @@ export default function Dashboard() {
                             return;
                         }
 
+                        if (isPastDay && !isAdmin) {
+                             toast.error("Data Retroativa", {
+                                description: "Não é possível realizar agendamentos em dias passados.",
+                                icon: <Lock className="h-4 w-4 text-red-500" />
+                            })
+                            return;
+                        }
+
                         handleDayClick(slot.day, slot.month)
                       }}
                       className={cn(
                         "relative border-b border-r p-2 transition-all flex flex-col gap-1 min-h-[100px] select-none",
-                        isPastDay && !isAdmin && "bg-zinc-100/50 dark:bg-zinc-900/80 cursor-not-allowed opacity-60",
-                        isPastDay && isAdmin && "bg-zinc-50/30 cursor-pointer",
                         
+                        isPastDay && !isAdmin && "bg-zinc-100/50 dark:bg-zinc-900/80 cursor-not-allowed opacity-60",
+                        isPastDay && isAdmin && "bg-zinc-50/50 dark:bg-zinc-900/50 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800",
+
                         !isCurrentMonth && "bg-zinc-50/60 dark:bg-zinc-900/50 opacity-40 grayscale pointer-events-none",
                         
                         isCurrentMonth && isWeekend && !isAdmin ? "bg-red-50 dark:bg-red-950/10 cursor-not-allowed hover:bg-red-100/50 dark:hover:bg-red-900/20" : 
-                        (isCurrentMonth && !isBlockedForUser && "bg-background cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50")
+                        (isCurrentMonth && !isBlockedForUser && !isPastDay && "bg-background cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50")
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -663,10 +673,12 @@ export default function Dashboard() {
                           )}>
                               {slot.day}
                           </span>
-                          {isPastDay && isCurrentMonth && !isWeekend && !isAdmin && (
-                             <Lock className="h-3 w-3 text-zinc-300" />
+                          
+                          {isPastDay && isCurrentMonth && (
+                             <Lock className="h-3 w-3 text-zinc-300 dark:text-zinc-700" />
                           )}
-                           {isWeekend && isCurrentMonth && !isAdmin && (
+
+                           {isWeekend && isCurrentMonth && !isAdmin && !isPastDay && (
                              <Lock className="h-3 w-3 text-red-200 dark:text-red-900" />
                           )}
                       </div>
@@ -691,7 +703,6 @@ export default function Dashboard() {
           onClose={() => setSelectedDayDetails(null)}
           data={selectedDayDetails}
           monthName={monthName}
-          // FALSE AQUI: Clicar no modal do dia é SEMPRE dia único (FIXO)
           onAddClick={(periodo: Periodo) => handleOpenAddForm(periodo, false)}
           onDelete={handleDeleteAppointment}
           onApprove={handleApproveAppointment}
@@ -706,7 +717,7 @@ export default function Dashboard() {
           onSave={handleSaveAppointment}
           laboratorios={LABORATORIOS}
           currentUser={currentUser}
-          isRangeMode={isRangeMode} // Passando o modo
+          isRangeMode={isRangeMode} 
         />
 
         <Toaster />
@@ -741,7 +752,6 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
     const [deleteStep, setDeleteStep] = React.useState<'select-scope' | 'confirm'>('select-scope')
     const [scopeToDelete, setScopeToDelete] = React.useState<'single' | 'series' | null>(null)
     
-    // Resetar estados ao abrir/fechar
     React.useEffect(() => {
         if (!isOpen) {
              setDeleteConfirmation(null);
@@ -757,7 +767,8 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
     const badgeColors: Record<string, string> = {
         Manhã: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 hover:bg-amber-100/80",
         Tarde: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100/80",
-        Noite: "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 hover:bg-zinc-100/80"
+        // ALTERADO: Noite com fundo preto e letra branca (invertido no dark mode)
+        Noite: "bg-zinc-950 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-950 hover:bg-zinc-900 dark:hover:bg-zinc-100"
     }
 
     const statusBadgeStyles = {
@@ -768,20 +779,19 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
     }
 
     const isPeriodExpired = (period: Periodo) => {
-        if (isAdmin) return false; 
-
         const now = new Date();
         const selectedDate = new Date(data.year, data.month, data.day);
         const today = new Date();
         today.setHours(0,0,0,0);
 
-        if (selectedDate > today) return false;
         if (selectedDate < today) return true;
+
+        if (selectedDate > today) return false;
 
         const currentHour = now.getHours();
         if (period === 'Manhã' && currentHour >= 12) return true;
         if (period === 'Tarde' && currentHour >= 18) return true;
-        if (period === 'Noite' && currentHour >= 23) return true; 
+        if (period === 'Noite' && currentHour >= 21) return true; 
 
         return false;
     }
@@ -834,7 +844,8 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
                         <div className="flex items-center justify-between mb-2">
                             {/* ESQUERDA */}
                             <div className="flex items-center gap-2">
-                                <Badge variant="secondary" className={cn("px-2.5 py-0.5 text-sm font-medium border-0", badgeColors[periodo])}>
+                                {/* ALTERADO: Adicionado largura fixa (w-24) e justify-center para alinhar a coluna */}
+                                <Badge variant="secondary" className={cn("w-24 justify-center px-2.5 py-0.5 text-sm font-medium border-0", badgeColors[periodo])}>
                                     <Clock className="mr-1.5 h-3.5 w-3.5" />{periodo}
                                 </Badge>
                                 
@@ -1125,7 +1136,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
 
         if (turno === 'Manhã' && currentHour >= 12) return false;
         if (turno === 'Tarde' && currentHour >= 18) return false;
-        if (turno === 'Noite' && currentHour >= 23) return false; 
+        if (turno === 'Noite' && currentHour >= 22) return false; 
 
         return true;
     }
@@ -1151,7 +1162,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
              {isRangeMode ? (
                 // MODO SÉRIE/BOTÃO: Inputs Editáveis
                 <div className="grid grid-cols-2 gap-4">
-                     <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="startDate" className="text-xs text-muted-foreground uppercase font-semibold">Data Inicial</Label>
                          <Popover>
                           <PopoverTrigger asChild>
@@ -1173,14 +1184,14 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                               onSelect={handleStartDateSelect}
                               initialFocus
                               locale={ptBR}
-                              // Bloqueia dias anteriores a hoje
+                              // ALTERADO: Bloqueia dias anteriores a hoje para todos
                               disabled={(date) => date < today}
                             />
                           </PopoverContent>
                         </Popover>
-                     </div>
+                      </div>
 
-                     <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="endDate" className="text-xs text-muted-foreground uppercase font-semibold">Data Final</Label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -1207,7 +1218,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                             />
                           </PopoverContent>
                         </Popover>
-                     </div>
+                      </div>
                 </div>
              ) : (
                 // MODO CALENDÁRIO: Texto Fixo
