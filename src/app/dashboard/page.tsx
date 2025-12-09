@@ -21,7 +21,8 @@ import {
   Unlock,
   CalendarDays, 
   Copy,
-  Trash2
+  Trash2,
+  Info // Importado novo ícone
 } from "lucide-react"
 
 // --- IMPORTS DE AUTENTICAÇÃO ---
@@ -107,7 +108,8 @@ interface Agendamento {
   docente: string
   disciplina: string
   labId?: number
-  groupId?: string 
+  groupId?: string
+  observacao?: string // Novo campo opcional
 }
 
 // DADOS ESTÁTICOS DOS LABORATÓRIOS
@@ -266,7 +268,8 @@ export default function Dashboard() {
     labId: number,
     startDetails: {d: number, m: number, y: number},
     endDateStr: string, 
-    periodos: Periodo[]
+    periodos: Periodo[],
+    observacao?: string
   }) => {
     
     const initialStatus = currentUser?.role === 'ADMIN' ? 'confirmado' : 'pendente';
@@ -279,45 +282,39 @@ export default function Dashboard() {
     const actualEndDate = endDate < startDate ? startDate : endDate;
 
     // --- 1. VERIFICAÇÃO DE CONFLITOS (NOVA LÓGICA) ---
-    // Percorre os dias simulados para ver se já existe algo no banco
     for (let d = new Date(startDate); d <= actualEndDate; d.setDate(d.getDate() + 1)) {
         const checkDia = d.getDate();
         const checkMes = d.getMonth();
         const checkAno = d.getFullYear();
 
         for (const p of data.periodos) {
-            // Verifica se existe agendamento neste dia/turno/lab
             const conflito = agendamentos.find(
                 (a) => 
                     a.dia === checkDia && 
                     a.mes === checkMes && 
                     a.ano === checkAno && 
                     a.periodo === p &&
-                    a.labId === data.labId // IMPORTANTE: Checa o laboratório atual
+                    a.labId === data.labId
             );
 
             if (conflito) {
                 toast.error("Conflito de horário", {
-                    description: `O turno da ${p} no dia e mês ${checkDia}/${checkMes + 1} já está reservado para ${conflito.docente}.`,
+                    description: `O turno da ${p} no dia ${checkDia}/${checkMes + 1} já está reservado para ${conflito.docente}.`,
                     icon: <AlertCircle className="h-4 w-4 text-red-500" />
                 });
-                return; // INTERROMPE O SALVAMENTO IMEDIATAMENTE
+                return;
             }
         }
     }
 
-    // --- 2. CRIAÇÃO DOS AGENDAMENTOS (SE PASSOU NA VALIDAÇÃO) ---
+    // --- 2. CRIAÇÃO DOS AGENDAMENTOS ---
     const newAppointments: Agendamento[] = [];
     const isBatch = actualEndDate.getTime() > startDate.getTime() || data.periodos.length > 1;
     const groupId = isBatch ? Math.random().toString(36).substr(2, 9) : undefined;
 
-    // Reinicia data para o loop de criação
     const createDateLoop = new Date(startDate);
-
-    // DATA DE HOJE (ZERADA PARA COMPARAÇÃO)
     const todayZero = new Date();
     todayZero.setHours(0,0,0,0);
-
     const now = new Date();
     const currentHour = now.getHours();
 
@@ -326,11 +323,9 @@ export default function Dashboard() {
         const currentMes = d.getMonth();
         const currentAno = d.getFullYear();
 
-        // Verifica se o dia do loop é "Hoje"
         const isLoopToday = d.getTime() === todayZero.getTime();
 
         data.periodos.forEach(p => {
-              // *** LÓGICA DE PULAR TURNO VENCIDO NO MODO SÉRIE ***
               let skip = false;
               if (isLoopToday) {
                   if (p === 'Manhã' && currentHour >= 12) skip = true;
@@ -349,7 +344,8 @@ export default function Dashboard() {
                     docente: data.docente,
                     disciplina: data.disciplina || "Sem disciplina",
                     labId: data.labId,
-                    groupId: groupId
+                    groupId: groupId,
+                    observacao: data.observacao // Salva a observação
                   });
               }
         });
@@ -506,7 +502,7 @@ export default function Dashboard() {
                 // TRUE AQUI: Habilita modo range (Editável)
                 handleOpenAddForm(undefined, true);
               }}>
-                <Plus className="mr-2 h-4 w-4" /> Novo Agendamento
+                <Plus className="mr-2 h-4 w-4" /> Agendamento Personalizado
               </Button>
           </div>
 
@@ -580,7 +576,7 @@ export default function Dashboard() {
                           </div>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="0" className="text-muted-foreground font-medium">Preencher laboratório...</SelectItem>
+                            <SelectItem value="0" className="text-muted-foreground font-medium">Preencher sala...</SelectItem>
                             {LABORATORIOS.map((lab) => (
                                 <SelectItem key={lab.id} value={String(lab.id)}>{lab.nome}</SelectItem>
                             ))}
@@ -861,6 +857,20 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
                                         <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                                     </div>
                                 )}
+
+                                {agendamento && agendamento.observacao && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-50">
+                                                <Info className="h-4 w-4" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 text-sm text-zinc-700 dark:text-zinc-300">
+                                            <p className="font-semibold mb-1">Observação:</p>
+                                            {agendamento.observacao}
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
                             </div>
                             
                             {/* DIREITA */}
@@ -993,6 +1003,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
     const [docente, setDocente] = React.useState("")
     const [disciplina, setDisciplina] = React.useState("")
     const [labId, setLabId] = React.useState("")
+    const [observacao, setObservacao] = React.useState("") // Estado para observação
     
     // Novo Estado de Data (String YYYY-MM-DD)
     const [startDate, setStartDate] = React.useState<Date | undefined>(undefined)
@@ -1025,6 +1036,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
             }
             setDisciplina("")
             setLabId(formData.labIdPre || "")
+            setObservacao("") // Resetar observação
             
             if (formData.periodoPre) {
                 setSelectedPeriodos([formData.periodoPre])
@@ -1070,6 +1082,12 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
             return
         }
 
+        // Validação da observação no modo série
+        if (isRangeMode && !observacao.trim()) {
+            toast.error("Observação obrigatória", { description: "Por favor, justifique o agendamento em série." })
+            return
+        }
+
         // Formata para enviar ao onSave (mantendo compatibilidade com o resto do código)
         // OBS: Usamos a string YYYY-MM-DD para o endDateStr
         const yEnd = endDate.getFullYear();
@@ -1083,7 +1101,8 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
             labId: Number(labId),
             startDetails: { d: startDate.getDate(), m: startDate.getMonth(), y: startDate.getFullYear() }, 
             endDateStr: endDateFormatted,
-            periodos: selectedPeriodos
+            periodos: selectedPeriodos,
+            observacao // Passa a observação
         })
     }
 
@@ -1272,6 +1291,21 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                 <Label htmlFor="disciplina">Disciplina / Curso <span className="text-xs font-normal text-muted-foreground ml-2">(Opcional)</span></Label>
                 <Input id="disciplina" placeholder="Ex: Algoritmos e Lógica" value={disciplina} onChange={(e) => setDisciplina(e.target.value)} />
              </div>
+
+             {/* 4. OBSERVAÇÃO (APENAS RANGE MODE) */}
+             {isRangeMode && (
+                <div className="grid gap-2">
+                    <Label htmlFor="obs">Observação / Justificativa <span className="text-red-500">*</span></Label>
+                    <textarea 
+                        id="obs" 
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Descreva o motivo do agendamento em série..." 
+                        value={observacao} 
+                        onChange={(e) => setObservacao(e.target.value)} 
+                        required
+                    />
+                </div>
+             )}
              
              <div className="grid grid-cols-2 gap-4 pt-4">
                  <Button type="button" variant="outline" onClick={onClose} className="w-full">
@@ -1279,7 +1313,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                  </Button>
                  <Button type="submit" className="w-full">
                    {isRangeMode 
-                    ? "Agendar Série"
+                    ? "Confirmar"
                     : "Confirmar"}
                  </Button>
              </div>
