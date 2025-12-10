@@ -8,6 +8,13 @@
       "when": 1764775087044,
       "tag": "0000_burly_hardball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765334244092,
+      "tag": "0001_needy_bastion",
+      "breakpoints": true
     }
   ]
 }

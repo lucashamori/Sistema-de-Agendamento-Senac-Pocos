@@ -1,40 +1,38 @@
 import { pgTable, index, foreignKey, bigint, timestamp, varchar, integer, boolean, unique, text, pgEnum } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 
 export const statusAgendamento = pgEnum("status_agendamento", ['pendente', 'confirmado', 'concluido'])
 
-
 export const agendamentos = pgTable("agendamentos", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idAgendamento: bigint("id_agendamento", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "agendamentos_id_agendamento_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
-	dataHorarioInicio: timestamp("data_horario_inicio", { withTimezone: true, mode: 'string' }).notNull(),
-	dataHorarioFim: timestamp("data_horario_fim", { withTimezone: true, mode: 'string' }).notNull(),
-	status: statusAgendamento().default('pendente').notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idSala: bigint("id_sala", { mode: "number" }).notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idUsuario: bigint("id_usuario", { mode: "number" }).notNull(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idTurma: bigint("id_turma", { mode: "number" }),
+    idAgendamento: bigint("id_agendamento", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    dataHorarioInicio: timestamp("data_horario_inicio", { withTimezone: true, mode: 'string' }).notNull(),
+    dataHorarioFim: timestamp("data_horario_fim", { withTimezone: true, mode: 'string' }).notNull(),
+    status: statusAgendamento().default('pendente').notNull(),
+    idSala: bigint("id_sala", { mode: "number" }).notNull(),
+    idUsuario: bigint("id_usuario", { mode: "number" }).notNull(),
+    idTurma: bigint("id_turma", { mode: "number" }),
+    observacao: text("observacao"),
+	disciplina: varchar("disciplina", { length: 255 }),
+    codigoSerie: varchar("codigo_serie", { length: 50 }),
 }, (table) => [
-	index("idx_agend_periodo").using("btree", table.dataHorarioInicio.asc().nullsLast().op("timestamptz_ops"), table.dataHorarioFim.asc().nullsLast().op("timestamptz_ops")),
-	index("idx_agend_sala").using("btree", table.idSala.asc().nullsLast().op("int8_ops")),
-	foreignKey({
-			columns: [table.idSala],
-			foreignColumns: [salas.idSala],
-			name: "fk_agend_sala"
-		}),
-	foreignKey({
-			columns: [table.idUsuario],
-			foreignColumns: [usuarios.idUsuario],
-			name: "fk_agend_usuario"
-		}),
-	foreignKey({
-			columns: [table.idTurma],
-			foreignColumns: [turmas.idTurma],
-			name: "fk_agend_turma"
-		}),
+    index("idx_agend_periodo").using("btree", table.dataHorarioInicio.asc().nullsLast().op("timestamptz_ops"), table.dataHorarioFim.asc().nullsLast().op("timestamptz_ops")),
+    index("idx_agend_serie").using("btree", table.codigoSerie.asc().nullsLast().op("text_ops")),
+    foreignKey({
+            columns: [table.idSala],
+            foreignColumns: [salas.idSala],
+            name: "fk_agend_sala"
+        }),
+    foreignKey({
+            columns: [table.idUsuario],
+            foreignColumns: [usuarios.idUsuario],
+            name: "fk_agend_usuario"
+        }),
+    foreignKey({
+            columns: [table.idTurma],
+            foreignColumns: [turmas.idTurma],
+            name: "fk_agend_turma"
+        }),
 ]);
+
 
 export const unidades = pgTable("unidades", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -152,6 +150,7 @@ export const checklists = pgTable("checklists", {
 	dataChecklist: timestamp("data_checklist", { withTimezone: true, mode: 'string' }).defaultNow(),
 	materialOk: boolean("material_ok").default(false).notNull(),
 	observacao: text(),
+	disciplina: varchar("disciplina", { length: 255 }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	idAgendamento: bigint("id_agendamento", { mode: "number" }).notNull(),
 }, (table) => [
