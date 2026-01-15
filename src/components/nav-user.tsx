@@ -1,19 +1,15 @@
 "use client"
 
-import { ChevronsUpDown, LogOut, Settings } from "lucide-react" // 1. Importei o ícone Settings
+import * as React from "react"
+import { ChevronsUpDown, LogOut, BadgeCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { signOut } from "firebase/auth"
+import { signOut, onAuthStateChanged } from "firebase/auth"
 import { auth } from "@/lib/firebase" 
+import { getDadosUsuarioSidebar } from "@/app/actions/auth"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup, // 2. Importei o Group para organizar
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -32,11 +28,37 @@ export function NavUser({
   user: {
     name: string
     email: string
-    avatar: string
   }
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
+
+  // 1. Estado para armazenar o cargo (inicia com um placeholder ou vazio)
+  const [cargo, setCargo] = React.useState("Carregando...")
+
+  // 2. Busca os dados assim que o componente carrega
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          // Busca o dado real no banco
+          const info = await getDadosUsuarioSidebar(currentUser.uid)
+          
+          if (info && info.cargo) {
+            setCargo(info.cargo)
+          } else {
+            setCargo("Usuário") // Fallback caso não tenha cargo definido
+          }
+        } catch (error) {
+          console.error("Erro ao buscar dados do usuário:", error)
+          setCargo("Erro ao carregar")
+        }
+      }
+    })
+
+    // Limpa o listener quando o componente desmonta
+    return () => unsubscribe()
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -45,12 +67,6 @@ export function NavUser({
     } catch (error) {
       console.error("Erro ao deslogar:", error)
     }
-  }
-
-  // Função para navegar para configurações
-  const handleSettings = () => {
-    // Altere para a sua rota de configurações real
-    router.push("/dashboard/configuracoes") 
   }
 
   return (
@@ -62,13 +78,10 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                <span className="truncate text-xs text-muted-foreground">{cargo}</span> {/* Exibe o cargo aqui */}
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -81,32 +94,22 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">{user.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+                  {/* Adicionei o cargo aqui também, destacado */}
+                  <span className="truncate text-[10px] font-medium text-primary mt-1">{cargo}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             
             <DropdownMenuSeparator />
             
-            {/* GRUPO DE CONFIGURAÇÕES */}
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={handleSettings} className="cursor-pointer">
-                <Settings />
-                Configurações
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+           
             
-            <DropdownMenuSeparator />
-            
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600">
-              <LogOut />
-              Log out
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-50">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
