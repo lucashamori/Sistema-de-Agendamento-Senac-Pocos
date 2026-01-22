@@ -84,7 +84,7 @@ const DATA_MENU = {
         },
         {
           title: "Exibir Usuarios",
-          url: "/exibirUsuarios",
+          url: "/cadastroUsuarios/exibirUsuarios",
         },
       ],
     },
