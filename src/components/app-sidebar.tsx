@@ -82,6 +82,10 @@ const DATA_MENU = {
           title: "Cadastrar Usuarios",
           url: "/cadastroUsuarios",
         },
+        {
+          title: "Exibir Usuarios",
+          url: "/exibirUsuarios",
+        },
       ],
     },
     {
