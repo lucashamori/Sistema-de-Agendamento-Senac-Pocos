@@ -100,7 +100,7 @@ const DATA_MENU = {
       icon: Monitor,
       items: [
         { title: "Cadastrar Equipamentos", url: "/cadastroEquipamentos" },
-        { title: "Consultar Equipamentos", url: "/exibirEquipamentos" },
+        { title: "Consultar Equipamentos", url: "/cadastroEquipamentos/exibirEquipamentos" },
       ],
     },
   ],
