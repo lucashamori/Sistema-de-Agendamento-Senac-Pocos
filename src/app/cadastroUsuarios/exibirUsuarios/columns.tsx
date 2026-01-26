@@ -117,7 +117,7 @@ function CellAction({ usuario }: { usuario: Usuario }) {
   return (
     <>
       {/* MUDANÇA AQUI: Substituímos o Dropdown por uma div com flex e botões diretos */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-left gap-2">
         <Button 
             variant="ghost" 
             size="icon" 
@@ -129,7 +129,7 @@ function CellAction({ usuario }: { usuario: Usuario }) {
         </Button>
 
         <Button 
-            variant="secondary" 
+            
             size="icon" 
             onClick={() => setOpenDelete(true)}
             title="Excluir Usuário"

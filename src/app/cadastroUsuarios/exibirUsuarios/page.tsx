@@ -15,11 +15,9 @@ import { listarUnidades, listarPerfis } from "@/app/actions/admin"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 
-// Adicione "searchParams" como Promise na tipagem
 type SearchParams = Promise<{ term?: string; status?: string; perfil?: string }>
 
 export default async function Page(props: { searchParams: SearchParams }) {
-  // 1. AWAIT NOS PARÂMETROS (Correção essencial para Next.js 15)
   const params = await props.searchParams;
 
   const [data, unidades, perfis] = await Promise.all([
@@ -54,9 +52,10 @@ export default async function Page(props: { searchParams: SearchParams }) {
           </div>
         </header>
         
-        <div>
-          <div className="container mx-auto py-10 space-y-4">
-             {/* Passamos unidades e perfis para os selects do modal */}
+        <div className="flex-1">
+          {/* CORREÇÃO AQUI: Adicionado px-4 para mobile e md:px-0 para telas maiores se preferir, 
+              mas px-4 ou container com padding é essencial no mobile */}
+          <div className="container mx-auto py-6 px-4 md:py-10 space-y-4">
              <UserControls unidades={unidades} perfis={perfis} />
              <DataTable columns={columns} data={data} />
           </div>
