@@ -169,7 +169,7 @@ export default function SolicitacoesPage() {
     Noite: "bg-zinc-800 text-zinc-100 dark:bg-zinc-700 dark:text-zinc-100 border-zinc-700",
   }
 
-  // --- LÓGICA DE LISTA (COM FILTRO DE FIM DE SEMANA) ---
+  // --- LÓGICA DE LISTA ---
   const organizedList = React.useMemo(() => {
     const filtered = agendamentos.filter(item => {
         const searchLower = searchText.toLowerCase()
@@ -215,9 +215,9 @@ export default function SolicitacoesPage() {
 
                 // 2. FILTRAR APENAS DIAS DA SEMANA (Remove Sab=6 e Dom=0)
                 const groupItemsWithoutWeekends = rawGroupItems.filter(gItem => {
-                     const dateObj = new Date(gItem.ano, gItem.mes, gItem.dia);
-                     const dayOfWeek = dateObj.getDay();
-                     return dayOfWeek !== 0 && dayOfWeek !== 6;
+                      const dateObj = new Date(gItem.ano, gItem.mes, gItem.dia);
+                      const dayOfWeek = dateObj.getDay();
+                      return dayOfWeek !== 0 && dayOfWeek !== 6;
                 });
 
                 // Se após filtrar sobrar itens, adiciona ao resultado
@@ -300,22 +300,17 @@ export default function SolicitacoesPage() {
     }
   }
 
+  // --- CARD DO AGENDAMENTO (Mobile Fixed) ---
   const AgendamentoCard = ({ item, isChild = false }: { item: Agendamento, isChild?: boolean }) => {
-     const itemDate = new Date(item.ano, item.mes, item.dia)
-     
-     // FUNÇÃO DE TEXTO INTELIGENTE (OBSERVAÇÃO)
-     const renderSmartText = (text: string | undefined, limit: number) => {
+      const itemDate = new Date(item.ano, item.mes, item.dia)
+      
+      const renderSmartText = (text: string | undefined, limit: number) => {
         if (!text) return null;
-        
         const isTruncated = text.length > limit;
         const truncatedText = text.substring(0, limit) + "...";
 
-        // Se couber, apenas exibe
-        if (!isTruncated) {
-            return <span>{text}</span>
-        }
+        if (!isTruncated) return <span>{text}</span>
 
-        // Se cortar, exibe Popover
         return (
             <Popover>
                 <PopoverTrigger asChild>
@@ -329,27 +324,43 @@ export default function SolicitacoesPage() {
                 </PopoverContent>
             </Popover>
         )
-     }
-     
-     return (
+      }
+      
+      return (
         <Card className={cn(
-            "overflow-hidden border shadow-sm transition-all", 
-            isChild ? "border-l-4 border-l-violet-500 ml-6 mb-3" : "hover:shadow-md"
+            "overflow-hidden border shadow-sm transition-all bg-white dark:bg-zinc-950", 
+            isChild ? "border-l-4 border-l-violet-500 ml-6 mb-3 bg-zinc-50/50" : "hover:shadow-md"
         )}>
             <CardContent className="p-0 flex flex-col sm:flex-row">
+                
+                {/* 1. DATA */}
                 <div className={cn(
-                    "flex flex-col items-center justify-center p-4 min-w-[120px] border-b sm:border-b-0 sm:border-r border-zinc-100 dark:border-zinc-800",
+                    "flex flex-row sm:flex-col items-center justify-between sm:justify-center p-4 gap-4 sm:min-w-[120px] border-b sm:border-b-0 sm:border-r border-zinc-100 dark:border-zinc-800",
                     isChild ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900"
                 )}>
-                    <span className="text-3xl font-medium text-muted-foreground">{item.dia}</span>
-                    <span className="text-sm font-medium uppercase text-muted-foreground">
-                        {format(itemDate, 'MMM', { locale: ptBR })}
-                    </span>
-                    <span className="text-xs text-muted-foreground mt-1">{item.ano}</span>
+                    <div className="flex items-center gap-3 sm:flex-col sm:gap-0">
+                        <span className="text-3xl font-medium text-muted-foreground">
+                             {String(item.dia).padStart(2, '0')}
+                        </span>
+                        <div className="flex flex-col sm:items-center leading-none">
+                            <span className="text-sm font-medium uppercase text-muted-foreground">
+                                {format(itemDate, 'MMM', { locale: ptBR })}
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-0.5 sm:mt-1">{item.ano}</span>
+                        </div>
+                    </div>
+                    {/* Badge visível na área da data apenas no mobile */}
+                    <div className="sm:hidden">
+                         <Badge variant="secondary" className={cn("border", periodColors[item.periodo])}>
+                            {item.periodo}
+                        </Badge>
+                    </div>
                 </div>
 
+                {/* 2. CONTEÚDO PRINCIPAL */}
                 <div className="flex-1 p-4 flex flex-col justify-center gap-2">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                    
+                    <div className="hidden sm:flex flex-wrap items-center gap-2 mb-1">
                         <Badge variant="secondary" className={cn("border", periodColors[item.periodo])}>
                             {item.periodo}
                         </Badge>
@@ -359,36 +370,44 @@ export default function SolicitacoesPage() {
                              </Badge>
                         )}
                     </div>
+                    
+                    {item.groupId && !isChild && (
+                         <div className="sm:hidden mb-2">
+                             <Badge variant="outline" className="w-fit gap-1 bg-violet-50 text-violet-700 border-violet-200">
+                                <Layers className="h-3 w-3" /> Série Recorrente
+                             </Badge>
+                         </div>
+                    )}
 
                     <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold text-lg">{item.docente}</span>
+                        <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="font-semibold text-lg line-clamp-1 break-all">{item.docente}</span>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                         {item.disciplina && (
                             <span className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-                                {item.disciplina}
+                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 shrink-0" />
+                                <span className="line-clamp-1">{item.disciplina}</span>
                             </span>
                         )}
                         <span className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
-                            <FlaskConical className="h-3.5 w-3.5" />
-                            {getLabName(item.labId)}
+                            <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+                            <span className="line-clamp-1">{getLabName(item.labId)}</span>
                         </span>
                     </div>
 
                     {item.observacao && (
                         <div className="mt-2 text-sm bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 p-2 rounded-md border border-amber-100 dark:border-amber-900/50 flex gap-2 items-start">
                             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                            {/* APLICANDO O TRUNCAMENTO COM LIMITE DE 100 CARACTERES */}
                             <span className="break-all">{renderSmartText(item.observacao, 100)}</span>
                         </div>
                     )}
                 </div>
 
+                {/* 3. AÇÕES (GRID NO MOBILE) */}
                 <div className={cn(
-                    "p-4 flex sm:flex-col items-center justify-center gap-2 border-t sm:border-t-0 sm:border-l border-zinc-100 dark:border-zinc-800",
+                    "p-4 grid grid-cols-2 sm:flex sm:flex-col items-center justify-center gap-3 border-t sm:border-t-0 sm:border-l border-zinc-100 dark:border-zinc-800",
                     isChild ? "bg-white dark:bg-zinc-950" : "bg-zinc-50/50 dark:bg-zinc-900/20"
                 )}>
                     <Button 
@@ -396,7 +415,9 @@ export default function SolicitacoesPage() {
                         className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white"
                         onClick={() => handleActionClick('approve', item)}
                     >
-                        <Check className="h-4 w-4 mr-2" /> Aprovar
+                        <Check className="h-4 w-4 mr-2" /> 
+                        <span className="hidden sm:inline">Aprovar</span>
+                        <span className="sm:hidden">Aprovar</span>
                     </Button>
                     <Button 
                         size="sm"
@@ -404,18 +425,20 @@ export default function SolicitacoesPage() {
                         className="w-full sm:w-auto bg-white text-red-600 border border-red-200 hover:bg-red-50 dark:bg-zinc-950 dark:border-red-900 dark:text-red-400"
                         onClick={() => handleActionClick('reject', item)}
                     >
-                        <X className="h-4 w-4 mr-2" /> Recusar
+                        <X className="h-4 w-4 mr-2" /> 
+                        <span className="hidden sm:inline">Recusar</span>
+                        <span className="sm:hidden">Recusar</span>
                     </Button>
                 </div>
             </CardContent>
         </Card>
-     )
+      )
   }
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-[#F8F9FA] dark:bg-zinc-950">
+      <SidebarInset className="bg-[#F8F9FA] dark:bg-zinc-950 overflow-x-hidden w-full max-w-[100vw]">
         
         {/* HEADER */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
@@ -424,12 +447,12 @@ export default function SolicitacoesPage() {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem>
+                <BreadcrumbItem className="hidden md:block">
                   <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
+                <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Solicitações Pendentes</BreadcrumbPage>
+                  <BreadcrumbPage>Solicitações</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -442,9 +465,9 @@ export default function SolicitacoesPage() {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Solicitações de Reserva</h1>
-              <p className="text-muted-foreground">Gerencie os pedidos pendentes de aprovação.</p>
+              <p className="text-muted-foreground text-sm md:text-base">Gerencie os pedidos pendentes de aprovação.</p>
             </div>
-            <Badge variant="secondary" className="px-3 py-1 text-sm">
+            <Badge variant="secondary" className="px-3 py-1 text-sm whitespace-nowrap">
               Total Pendente: {agendamentos.length}
             </Badge>
           </div>
@@ -455,7 +478,7 @@ export default function SolicitacoesPage() {
                   <div className="relative flex-1">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Pesquisar docente, laboratório..." 
+                        placeholder="Pesquisar..." 
                         className="pl-9 bg-zinc-50 dark:bg-zinc-950"
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
@@ -475,10 +498,10 @@ export default function SolicitacoesPage() {
 
                   <Select value={filterLab} onValueChange={setFilterLab}>
                     <SelectTrigger className="w-full md:w-[180px] bg-zinc-50 dark:bg-zinc-950">
-                        <SelectValue placeholder="Laboratório" />
+                        <SelectValue placeholder="Sala" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todos Laboratórios</SelectItem>
+                        <SelectItem value="all">Todas as salas</SelectItem>
                         {laboratorios.map(lab => (
                             <SelectItem key={lab.id} value={String(lab.id)}>{lab.nome}</SelectItem>
                         ))}
@@ -564,8 +587,6 @@ export default function SolicitacoesPage() {
                 const firstDate = new Date(firstItem.ano, firstItem.mes, firstItem.dia);
                 const lastDate = new Date(lastItem.ano, lastItem.mes, lastItem.dia);
 
-                const isConfirmed = entry.items.some(i => i.status === 'confirmado');
-
                 return (
                     <div key={entry.id} className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/20 overflow-hidden shadow-sm">
                         <div 
@@ -578,11 +599,11 @@ export default function SolicitacoesPage() {
                                 </div>
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="font-semibold text-lg text-zinc-600 dark:text-zinc-400">Solicitação em Série</h3>
-                                        
-                                        <Badge variant="secondary" className={cn("border", periodColors[firstItem.periodo])}>
-                                            {firstItem.periodo}
-                                        </Badge>
+                                            <h3 className="font-semibold text-lg text-zinc-600 dark:text-zinc-400">Solicitação em Série</h3>
+                                            
+                                            <Badge variant="secondary" className={cn("border", periodColors[firstItem.periodo])}>
+                                                {firstItem.periodo}
+                                            </Badge>
                                     </div>
 
                                     <p className="text-sm text-muted-foreground flex flex-wrap items-center gap-2 mt-1">
@@ -594,7 +615,6 @@ export default function SolicitacoesPage() {
                                                 }
                                                 <span className="text-zinc-300 dark:text-zinc-700 mx-1">•</span>
                                                 
-                                                {/* ÍCONE DE AGRUPAMENTO (LAYERS) E TEXTO */}
                                                 <span className="flex items-center gap-1.5 text-muted-foreground">
                                                     <Layers className="h-3.5 w-3.5" />
                                                     {count} dias
@@ -663,7 +683,7 @@ export default function SolicitacoesPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 
-                    {/* LAYOUT ATUALIZADO */}
+                    {/* DADOS FORMATADOS NO MODAL */}
                     <div className="bg-zinc-50 dark:bg-zinc-900 p-4 rounded-lg border text-sm flex flex-col gap-3 my-2">
                         
                         {/* 1. DATA E PERÍODO */}
@@ -672,7 +692,10 @@ export default function SolicitacoesPage() {
                             
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <CalendarDays className="h-3.5 w-3.5 text-muted-foreground"/>
-                                <span>{actionData.item.dia}/{actionData.item.mes + 1}/{actionData.item.ano}</span>
+                                    <span>
+                                    {/* DATA FORMATADA: dd/mm/aaaa */}
+                                    {String(actionData.item.dia).padStart(2, '0')}/{String(actionData.item.mes + 1).padStart(2, '0')}/{actionData.item.ano}
+                                    </span>
                                 <span className="text-xs text-muted-foreground/60 mx-1">•</span>
                                 <div className="flex items-center gap-1.5 text-muted-foreground">
                                     {actionData.item.groupId 
@@ -697,7 +720,7 @@ export default function SolicitacoesPage() {
 
                         {/* 2. DOCENTE */}
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-bold uppercase text-foreground tracking-wider">Docente</span>
+                            <span className="text-xs font-bold uppercase text-foreground tracking-wider">Solicitante</span>
                             <span className="text-base text-muted-foreground leading-none">
                                 {actionData.item.docente}
                             </span>
@@ -707,7 +730,7 @@ export default function SolicitacoesPage() {
 
                         {/* 3. LABORATÓRIO */}
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-bold uppercase text-foreground tracking-wider">Laboratório</span>
+                            <span className="text-xs font-bold uppercase text-foreground tracking-wider">Sala</span>
                             <span className="text-muted-foreground flex items-center gap-2">
                                 <FlaskConical className="h-3.5 w-3.5 text-muted-foreground" />
                                 {getLabName(actionData.item.labId)}
