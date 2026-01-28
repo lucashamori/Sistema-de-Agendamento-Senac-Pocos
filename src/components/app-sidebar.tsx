@@ -56,7 +56,7 @@ const DATA_MENU = {
       url: "#",
       icon: FileChartColumn,
       items: [
-        { title: "Histórico", url: "/relatorios/historico" },
+        { title: "Histórico", url: "/checklist" },
       ],
     },
     {

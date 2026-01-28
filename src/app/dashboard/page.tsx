@@ -1,15 +1,14 @@
 "use client"
 
 import * as React from "react"
-
-import { useEffect, useState } from "react"
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User, 
   CheckCircle2, AlertCircle, Plus, FlaskConical, ListChecks, 
   Loader2, X, Check, Lock, CalendarDays, Layers, ListFilter,
-  SunMedium
+  SunMedium, FileWarning 
 } from "lucide-react"
 
+import { useRouter } from "next/navigation" 
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { getDadosUsuarioSidebar } from "@/app/actions/auth"
@@ -23,6 +22,9 @@ import {
   approveSerieAction, 
   getSalasAction 
 } from "@/app/actions/agendamentos"
+
+// Importar a action de relatórios pendentes
+import { getRelatoriosPendentesAction } from "@/app/actions/checklist"
 
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -51,7 +53,6 @@ import { toast } from "sonner"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-// --- TIPOS ---
 type Periodo = "Manhã" | "Tarde" | "Noite"
 
 interface Usuario {
@@ -78,36 +79,32 @@ interface Agendamento {
 
 interface Sala { id: number; nome: string; codigo?: string; }
 
-// --- COMPONENTE PRINCIPAL ---
 export default function DashboardView() {
+  const router = useRouter()
   const today = new Date();
   today.setHours(0, 0, 0, 0); 
 
-  // --- ESTADOS ---
   const [date, setDate] = React.useState(new Date()) 
   const [agendamentos, setAgendamentos] = React.useState<Agendamento[]>([])
   const [laboratorios, setLaboratorios] = React.useState<Sala[]>([]) 
+  const [relatoriosPendentes, setRelatoriosPendentes] = React.useState<any[]>([]) 
   const [isLoading, setIsLoading] = React.useState(true)
   const [currentUser, setCurrentUser] = React.useState<Usuario | null>(null)
 
-  // Filtros
   const [selectedLab, setSelectedLab] = React.useState("0") 
   const [filterStatus, setFilterStatus] = React.useState("todos")
   const [filterPeriod, setFilterPeriod] = React.useState("todos")
-  
-  // Estado de Erro Visual do Select
+
   const [isLabError, setIsLabError] = React.useState(false)
-   
-  // Modais
+
   const [selectedDayDetails, setSelectedDayDetails] = React.useState<{ day: number, month: number, year: number, appointments: Agendamento[] } | null>(null)
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [isRangeMode, setIsRangeMode] = React.useState(false) 
-   
+    
   const [formInitialDate, setFormInitialDate] = React.useState<{
     day: number, month: number, year: number, periodoPre?: Periodo, labIdPre?: string 
   } | null>(null)
 
-  // --- 1. AUTH ---
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -141,17 +138,18 @@ export default function DashboardView() {
     return () => unsubscribe()
   }, [])
 
-  // --- 2. FETCH DATA ---
   const fetchData = React.useCallback(async () => {
     setIsLoading(true)
     try {
-      const [dadosAgendamentos, dadosSalas] = await Promise.all([
+      const [dadosAgendamentos, dadosSalas, dadosRelatorios] = await Promise.all([
         getAgendamentosAction(),
-        getSalasAction()
+        getSalasAction(),
+        getRelatoriosPendentesAction() 
       ]);
       
       setAgendamentos(dadosAgendamentos as unknown as Agendamento[])
       setLaboratorios(dadosSalas)
+      setRelatoriosPendentes(dadosRelatorios)
     } catch (error) {
       console.error(error)
       toast.error("Erro ao carregar dados.")
@@ -164,30 +162,27 @@ export default function DashboardView() {
     fetchData()
   }, [fetchData])
 
-  // --- HANDLERS ---
   const nextMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1, 1))
   const prevMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1, 1))
-  
-  // Mês formatado (Janeiro de 2026)
+
   const rawMonthName = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const monthName = rawMonthName.charAt(0).toUpperCase() + rawMonthName.slice(1);
 
-  // Validação Lab
-  const validateLabSelection = () => {
+ const validateLabSelection = () => {
     if (!selectedLab || selectedLab === "0") {
         setIsLabError(true);
-        toast.error("Selecione uma sala", { 
+        toast.error("Selecione um laboratório", { 
             description: "É necessário escolher uma sala para visualizar a agenda.",
-            id: "erro-selecione-uma-sala" ,
             duration: 4000,
-            icon: <FlaskConical className="h-5 w-5 text-red-500" />
+            icon: <FlaskConical className="h-5 w-5 text-red-500" />,
+            id: "erro-selecionar-lab" 
         });
         return false;
     }
     return true;
-  }
+}
 
- const handleDayClick = (day: number, month: number, isCurrentMonth: boolean) => {
+const handleDayClick = (day: number, month: number, isCurrentMonth: boolean) => {
     if (!isCurrentMonth) return;
     if (!validateLabSelection()) return;
 
@@ -197,7 +192,6 @@ export default function DashboardView() {
     const now = new Date();
     now.setHours(0,0,0,0); 
 
-    
     if (clickedDate < now) {
         toast.error("Data Retroativa", { 
             description: "Não é possível agendar Data Retroativa.", 
@@ -207,11 +201,21 @@ export default function DashboardView() {
         return;
     }
 
+
     const apps = getAppointments(day, month, year)
     setSelectedDayDetails({ day, month, year, appointments: apps })
   }
 
   const handleOpenAddForm = (periodo?: Periodo, enableRange: boolean = false) => {
+    if (!currentUser || !currentUser.id) return;
+
+    const usuarioTemPendencia = relatoriosPendentes.some(r => r.idUsuario === currentUser.id);
+
+    if (usuarioTemPendencia) {
+        router.push("/agendamentosMeus");
+        return;
+    }
+
     if (!validateLabSelection()) return;
 
     let targetDay = today.getDate();
@@ -388,12 +392,9 @@ export default function DashboardView() {
     return filtered.sort((a, b) => order[a.periodo] - order[b.periodo]);
   }
 
- 
- 
-
   // --- UI RENDER ---
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider>
       <AppSidebar />
       <SidebarInset className="bg-[#F8F9FA] dark:bg-zinc-950 flex flex-col flex-1 h-full overflow-hidden">
         
@@ -403,7 +404,7 @@ export default function DashboardView() {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block"><BreadcrumbLink href="#">Agendamento</BreadcrumbLink></BreadcrumbItem>
+                <BreadcrumbItem className="hidden md:block"><BreadcrumbLink >Agendamento</BreadcrumbLink></BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem><BreadcrumbPage>Agendar Sala</BreadcrumbPage></BreadcrumbItem>
               </BreadcrumbList>
@@ -413,17 +414,17 @@ export default function DashboardView() {
         </header>
 
         <div className="flex flex-1 flex-col p-3 md:p-6">
-          {/* HEADER CONTROLS */}
+          
           <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 mb-4 shrink-0">
-             
-             {/* DATA E NAVEGAÇÃO (Fixo à esquerda ou topo em mobile) */}
+              
+             {/* DATA E NAVEGAÇÃO */}
             <div className="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-md border border-zinc-300 dark:border-zinc-700 shadow-sm h-9 w-full sm:w-[320px] px-1 gap-2">
                 <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
 
                 <span className="font-semibold text-sm text-zinc-800 dark:text-zinc-100 whitespace-nowrap">
-                   {monthName}
+                    {monthName}
                 </span>
 
                 <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -431,14 +432,26 @@ export default function DashboardView() {
                 </Button>
              </div>
 
-
-             {/* FILTROS E BOTÃO (Com flex-wrap para quebrar linha se necessário) */}
+             {/* FILTROS E BOTÃO */}
              <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 w-full xl:w-auto ml-auto">
                 
-                {/* SELECT LABORATÓRIO (Flexível: ocupa espaço disponível) */}
+                {/* SELECT LABORATÓRIO */}
                 <div className="relative w-full sm:flex-1 min-w-[200px] xl:w-[280px]">
-                    <Select value={selectedLab} onValueChange={setSelectedLab}>
-                        <SelectTrigger className="h-9 bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 shadow-sm w-full ">
+                    <Select 
+                        value={selectedLab} 
+                        onValueChange={(val) => {
+                            setSelectedLab(val);
+                            setIsLabError(false);
+                        }}
+                    >
+                        <SelectTrigger 
+                            className={cn(
+                                "h-9 bg-white dark:bg-zinc-900 shadow-sm w-full font-normal transition-all duration-300",
+                                isLabError 
+                                    ? "border-red-500 ring-2 ring-red-200 dark:ring-red-900 animate-in fade-in zoom-in-95" 
+                                    : "border-zinc-300 dark:border-zinc-700"
+                            )}
+                        >
                           <div className="flex items-center gap-2 truncate">
                               <div className="bg-primary/10 p-1 rounded-md shrink-0"><FlaskConical className="h-3 w-3 text-primary" /></div>
                               <SelectValue placeholder="Laboratório" />
@@ -491,12 +504,13 @@ export default function DashboardView() {
                     </Select>
                 </div>
 
-                {/* BOTÃO AGENDAR (Fixo, mas flexível se precisar) */}
+                {/* BOTÃO AGENDAR */}
                 <Button className="h-9 px-4 font-medium shadow-md whitespace-nowrap shrink-0 w-full sm:w-auto  bg-primary hover:bg-primary/90" onClick={() => handleOpenAddForm(undefined, true)}>
                     <Plus className="mr-2 h-4 w-4" /> Agendar Período
                 </Button>
              </div>
           </div>
+
           {/* LEGENDA */}
           <div className="flex flex-wrap items-center gap-6 mb-4 px-2 py-2 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100 dark:border-zinc-800 shrink-0">
              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-auto md:mr-0">Legenda</div>
@@ -511,7 +525,6 @@ export default function DashboardView() {
              <div className="flex items-center gap-2 ml-auto"><span className="h-3 w-3 rounded-[2px] bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50"></span><span className="text-xs font-medium text-muted-foreground">Fim de Semana</span></div>
           </div>
 
-          {/* GRID DO CALENDÁRIO */}
           <div className="bg-white dark:bg-zinc-900 border rounded-xl shadow-sm flex flex-col">
              <div className="grid grid-cols-7 border-b bg-zinc-50/80 dark:bg-zinc-900/50">
                 {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map((d) => (
@@ -575,12 +588,11 @@ export default function DashboardView() {
         <AppointmentFormDialog isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} formData={formInitialDate} onSave={handleSaveAppointment} laboratorios={laboratorios} currentUser={currentUser} isRangeMode={isRangeMode} />
         
       </SidebarInset>
-      <Toaster richColors position="bottom-right" className="z-99999" />
+      <Toaster richColors position="bottom-right" className="z-[99999]" />
     </SidebarProvider>
   )
 }
 
-// --- EVENT PILL ---
 interface EventPillProps {
   app: Agendamento
 }
@@ -624,7 +636,6 @@ export function EventPill({ app }: EventPillProps) {
           )}>
             {app.docente}
           </span>
-          {/* ÍCONE DE SÉRIE AO LADO DO STATUS (NO FIM DO PILL) */}
           {app.groupId && (
             <div className="ml-2 pl-2 border-l border-zinc-200 dark:border-zinc-700 shrink-0">
                <Layers className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
@@ -739,7 +750,6 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
                                             agendamento.status === 'pendente' && "bg-amber-500 hover:bg-amber-600 text-white"
                                         )}>{agendamento.status}</Badge>
 
-                                        {/* ÍCONE DE SÉRIE AO LADO DO STATUS (NO CABEÇALHO) */}
                                         {agendamento.groupId && (
                                             <Badge variant="outline" className="h-5 px-1.5 gap-1 bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-800 text-[10px] pointer-events-none">
                                                 <Layers className="h-3 w-3" /> Série
@@ -749,8 +759,8 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
                                 </div>
                                 {agendamento && isAdmin && (
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {agendamento.status === 'pendente' && <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => handleInitialAction('approve', agendamento)}><Check className="h-4 w-4" /></Button>}
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-50" onClick={() => handleInitialAction('delete', agendamento)}><X className="h-4 w-4" /></Button>
+                                                {agendamento.status === 'pendente' && <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:bg-emerald-50" onClick={() => handleInitialAction('approve', agendamento)}><Check className="h-4 w-4" /></Button>}
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-50" onClick={() => handleInitialAction('delete', agendamento)}><X className="h-4 w-4" /></Button>
                                     </div>
                                 )}
                             </div>
@@ -760,15 +770,11 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
                                         <div className="bg-primary/10 p-2 rounded-full mt-0.5 shrink-0"><User className="h-4 w-4 text-primary" /></div>
                                         <div className="flex-1 space-y-1 w-full min-w-0">
                                             
-                                            {/* Nome */}
                                             <p className="font-semibold text-sm leading-tight text-zinc-900 dark:text-zinc-100 truncate">
                                                 {agendamento.docente}
                                             </p>
-                                            
-                                            {/* Disciplina (60 chars limit) */}
-                                            {renderSmartText(agendamento.disciplina, 60, "Disciplina")}
 
-                                            {/* Observação (100 chars limit) */}
+                                            {renderSmartText(agendamento.disciplina, 60, "Disciplina")}
                                             {renderSmartText(agendamento.observacao, 100, "Observação", true)}
 
                                         </div>
@@ -784,7 +790,6 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
             </ScrollArea>
             </DialogContent>
         </Dialog>
-        {/* AlertDialog mantido igual */}
         <AlertDialog open={!!confirmationState} onOpenChange={(val) => !val && setConfirmationState(null)}>
             <AlertDialogContent>
                 <AlertDialogHeader><AlertDialogTitle>Confirmação</AlertDialogTitle><AlertDialogDescription>{confirmationState?.step === 'select-scope' ? "Este agendamento faz parte de uma série. Como deseja prosseguir?" : "Tem certeza que deseja confirmar esta ação?"}</AlertDialogDescription></AlertDialogHeader>
@@ -803,7 +808,6 @@ function DayDetailsDialog({ isOpen, onClose, data, monthName, onAddClick, onDele
 }
 
 function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios, currentUser, isRangeMode }: any) {
-    // ... mantido igual ao anterior ...
     const [disciplina, setDisciplina] = React.useState("")
     const [labId, setLabId] = React.useState("")
     const [observacao, setObservacao] = React.useState("")
@@ -811,36 +815,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
     const [endDate, setEndDate] = React.useState<Date | undefined>(undefined)
     const [selectedPeriodos, setSelectedPeriodos] = React.useState<Periodo[]>([])
     const today = new Date(); today.setHours(0,0,0,0);
-    
-    
-    // Estado para armazenar o nome do usuário logado
-  const [nomeSolicitante, setNomeSolicitante] = useState("Carregando...")
-
-  // Busca o usuário assim que a tela abre
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // Busca os dados detalhados no banco (para pegar o nome correto)
-          const dados = await getDadosUsuarioSidebar(user.uid)
-          
-          if (dados && dados.nomeUsuario) {
-            setNomeSolicitante(dados.nomeUsuario)
-          } else {
-            // Se não achar no banco, usa o do Google/Email
-            setNomeSolicitante(user.displayName || user.email || "Usuário")
-          }
-        } catch (error) {
-          console.error("Erro ao buscar usuário:", error)
-        }
-      } else {
-        setNomeSolicitante("")
-      }
-    })
-
-    return () => unsubscribe()
-  }, [])
-
+  
     React.useEffect(() => {
         if(isOpen && formData) {
             setDisciplina("")
@@ -917,9 +892,9 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                       </div>
                 </div>
              ) : (
-                <div className="flex items-center justify-center p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border text-sm font-medium w-full text-zinc-600 dark:text-zinc-400 cursor-not-allowed">
-                    <CalendarDays className="mr-2 h-4 w-4 opacity-50"/>
-                    {String(formData.day).padStart(2, '0')}/{String(formData.month + 1).padStart(2, '0')}/{formData.year}
+                <div className="flex flex-col gap-2">
+                    <Label className="text-xs text-muted-foreground uppercase font-semibold">Data do Agendamento</Label>
+                    <div className="flex items-center justify-center p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border text-sm font-medium w-full text-zinc-600 dark:text-zinc-400 cursor-not-allowed"><CalendarDays className="mr-2 h-4 w-4 opacity-50"/>{formData.day}/{formData.month + 1}/{formData.year}</div>
                 </div>
              )}
              <div className="flex flex-col gap-2">
@@ -937,11 +912,11 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
              </div>
              <Separator className="my-2"/>
              <div className="grid gap-2">
-                <Label htmlFor="docente">Solicitante</Label>
-                <div className="relative"><Input id="docente" value={nomeSolicitante} readOnly className="bg-muted text-muted-foreground cursor-not-allowed border-dashed focus-visible:ring-0 pl-3 pr-20" tabIndex={-1} required /><div className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><span className="text-xs text-muted-foreground bg-background px-1 border rounded shadow-sm">Seu nome</span></div></div>
+                <Label htmlFor="docente">Nome do Docente</Label>
+                <div className="relative"><Input id="docente" value={currentUser?.nome || ""} readOnly className="bg-muted text-muted-foreground cursor-not-allowed border-dashed focus-visible:ring-0 pl-3 pr-20" tabIndex={-1} required /><div className="absolute inset-y-0 right-3 flex items-center pointer-events-none"><span className="text-xs text-muted-foreground bg-background px-1 border rounded shadow-sm">Seu nome</span></div></div>
              </div>
              <div className="grid gap-2 w-full">
-                <Label htmlFor="lab">Sala</Label>
+                <Label htmlFor="lab">Laboratório</Label>
                 <div className="relative">
                     <Select value={labId} onValueChange={setLabId} disabled>
                       <SelectTrigger className="w-full bg-muted text-muted-foreground opacity-100 cursor-not-allowed"><SelectValue placeholder="Laboratório" /></SelectTrigger>
@@ -949,8 +924,8 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                     </Select>
                 </div>
              </div>
-             <div className="grid gap-2"><Label htmlFor="disciplina">Turma <span className="text-xs font-normal text-muted-foreground ml-2"></span></Label><Input id="disciplina" placeholder="Ex: Algoritmos e Lógica" value={disciplina} onChange={(e) => setDisciplina(e.target.value)} /></div>
-             <div className="grid gap-2"><Label htmlFor="obs">Observação <span className="text-xs font-normal text-muted-foreground ml-2"></span></Label><textarea id="obs" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none" placeholder="Adicione observações..." value={observacao} onChange={(e) => setObservacao(e.target.value)} /></div>
+             <div className="grid gap-2"><Label htmlFor="disciplina">Disciplina / Curso <span className="text-xs font-normal text-muted-foreground ml-2">(Opcional)</span></Label><Input id="disciplina" placeholder="Ex: Algoritmos e Lógica" value={disciplina} onChange={(e) => setDisciplina(e.target.value)} /></div>
+             <div className="grid gap-2"><Label htmlFor="obs">Observação <span className="text-xs font-normal text-muted-foreground ml-2">(Opcional)</span></Label><textarea id="obs" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none" placeholder="Adicione observações..." value={observacao} onChange={(e) => setObservacao(e.target.value)} /></div>
              <div className="grid grid-cols-2 gap-4 pt-4"><Button type="button" variant="outline" onClick={onClose} className="w-full">Cancelar</Button><Button type="submit" className="w-full">Confirmar</Button></div>
           </form>
         </DialogContent>
