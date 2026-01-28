@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { Suspense } from "react"
 import {
   getRelatoriosPendentesAction,
   getEquipamentosDaSalaAction,
@@ -35,7 +36,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Image from "next/image"
 
-export default function RelatoriosPage() {
+function RelatoriosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -617,5 +618,14 @@ export default function RelatoriosPage() {
 
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+export default function RelatoriosPage() {
+  return (
+    // O fallback pode ser qualquer indicador de carregamento
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Carregando...</div>}>
+      <RelatoriosContent />
+    </Suspense>
   )
 }
