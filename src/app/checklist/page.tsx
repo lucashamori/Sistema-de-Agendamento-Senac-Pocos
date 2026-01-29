@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react" // 1. IMPORTAÇÃO DO SUSPENSE ADICIONADA
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   getRelatoriosPendentesAction,
@@ -28,14 +29,15 @@ import { Badge } from "@/components/ui/badge"
 import {
   ClipboardList, History, CheckCircle2, XCircle, Calendar, User, Search,
   RefreshCcw, X, ChevronDown, Package, AlertTriangle, ImageIcon, FileWarning,
-  Layers, Brush, Box
+  Layers, Brush, Box, Loader2
 } from "lucide-react"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Image from "next/image"
 
-export default function RelatoriosPage() {
+// 2. RENOMEADO DE "RelatoriosPage" PARA "RelatoriosContent" E REMOVIDO O "export default"
+function RelatoriosContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -277,11 +279,11 @@ export default function RelatoriosPage() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/dashboard">Checklists</BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard">Sistema</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Histórico</BreadcrumbPage>
+                <BreadcrumbPage>Gestão de Relatórios</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -606,5 +608,18 @@ export default function RelatoriosPage() {
 
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+// 3. NOVO COMPONENTE DEFAULT COM SUSPENSE
+export default function RelatoriosPage() {
+  return (
+    <Suspense fallback={
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    }>
+      <RelatoriosContent />
+    </Suspense>
   )
 }
