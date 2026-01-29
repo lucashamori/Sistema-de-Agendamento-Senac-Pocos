@@ -2,11 +2,14 @@
 
 import { db } from "@/db"
 import { agendamentos, checklists, equipamentos, salas, usuarios } from "@/db/migrations/schema"
-import { eq, and, notExists, desc, sql, inArray } from "drizzle-orm" 
+import { eq, and, notExists, desc, sql, inArray, lte } from "drizzle-orm" 
 import { revalidatePath } from "next/cache"
 
 // --- 1. BUSCAR RELATÓRIOS PENDENTES ---
 export async function getRelatoriosPendentesAction() {
+  // 2. Define o momento atual
+  const agora = new Date().toISOString(); 
+
   return await db
     .select({
       id: agendamentos.idAgendamento,
@@ -24,6 +27,10 @@ export async function getRelatoriosPendentesAction() {
     .where(
       and(
         eq(agendamentos.status, 'confirmado'),
+        
+        // 3. O PULO DO GATO: Filtra para pegar apenas o que já começou/passou
+        lte(agendamentos.dataHorarioInicio, agora), 
+
         notExists(
           db.select().from(checklists).where(eq(checklists.idAgendamento, agendamentos.idAgendamento))
         )

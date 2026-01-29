@@ -642,7 +642,11 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
              ) : (
                 <div className="flex flex-col gap-2">
                     <Label className="text-xs text-muted-foreground uppercase font-semibold">Data do Agendamento</Label>
-                    <div className="flex items-center justify-center p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border text-sm font-medium w-full text-zinc-600 dark:text-zinc-400 cursor-not-allowed"><CalendarDays className="mr-2 h-4 w-4 opacity-50"/>{formData.day}/{formData.month + 1}/{formData.year}</div>
+                        <div className="flex items-center justify-center p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border text-sm font-medium w-full text-zinc-600 dark:text-zinc-400 cursor-not-allowed">
+                            <CalendarDays className="mr-2 h-4 w-4 opacity-50"/>
+                            
+                            {String(formData.day).padStart(2, "0")}/{String(formData.month + 1).padStart(2, "0")}/{formData.year}
+                        </div>
                 </div>
              )}
              
@@ -663,7 +667,7 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
              <Separator className="my-2"/>
              
              <div className="grid gap-2 w-full">
-                <Label htmlFor="lab">Laboratório</Label>
+                <Label htmlFor="lab">Sala</Label>
                 <div className="relative">
                     <Select value={labId} onValueChange={setLabId} disabled>
                       <SelectTrigger className="w-full bg-muted text-muted-foreground opacity-100 cursor-not-allowed"><SelectValue placeholder="Laboratório" /></SelectTrigger>
@@ -690,8 +694,8 @@ function AppointmentFormDialog({ isOpen, onClose, formData, onSave, laboratorios
                 )}
              </div>
 
-             <div className="grid gap-2"><Label htmlFor="disciplina">Disciplina / Curso <span className="text-xs font-normal text-muted-foreground ml-2">(Opcional)</span></Label><Input id="disciplina" placeholder="Ex: Algoritmos e Lógica" value={disciplina} onChange={(e) => setDisciplina(e.target.value)} /></div>
-             <div className="grid gap-2"><Label htmlFor="obs">Observação <span className="text-xs font-normal text-muted-foreground ml-2">(Opcional)</span></Label><textarea id="obs" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none" placeholder="Adicione observações..." value={observacao} onChange={(e) => setObservacao(e.target.value)} /></div>
+             <div className="grid gap-2"><Label htmlFor="disciplina">Turma <span className="text-xs font-normal text-muted-foreground ml-2"></span></Label><Input id="disciplina" placeholder="Ex: Algoritmos e Lógica" value={disciplina} onChange={(e) => setDisciplina(e.target.value)} /></div>
+             <div className="grid gap-2"><Label htmlFor="obs">Observação <span className="text-xs font-normal text-muted-foreground ml-2"></span></Label><textarea id="obs" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none" placeholder="Adicione observações..." value={observacao} onChange={(e) => setObservacao(e.target.value)} /></div>
              <div className="grid grid-cols-2 gap-4 pt-4"><Button type="button" variant="outline" onClick={onClose} className="w-full">Cancelar</Button><Button type="submit" className="w-full">Confirmar</Button></div>
           </form>
         </DialogContent>

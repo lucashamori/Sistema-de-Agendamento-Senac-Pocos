@@ -65,7 +65,7 @@ const DATA_MENU = {
       icon: Users,
       items: [
         { title: "Cadastrar Usuarios", url: "/cadastroUsuarios" },
-        { title: "Exibir Usuarios", url: "/cadastroUsuarios/exibirUsuarios" },
+        { title: "Consultar Usuarios", url: "/cadastroUsuarios/exibirUsuarios" },
       ],
     },
     {

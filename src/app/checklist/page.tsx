@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { Suspense } from "react" // 1. Importação do Suspense
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   getRelatoriosPendentesAction,
@@ -36,8 +35,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import Image from "next/image"
 
-// 2. Renomeado de RelatoriosPage para RelatoriosContent e removido o 'export default'
-function RelatoriosContent() {
+export default function RelatoriosPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -279,11 +277,11 @@ function RelatoriosContent() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/dashboard">Sistema</BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard">Checklists</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Gestão de Relatórios</BreadcrumbPage>
+                <BreadcrumbPage>Histórico</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -608,18 +606,5 @@ function RelatoriosContent() {
 
       </SidebarInset>
     </SidebarProvider>
-  )
-}
-
-// 3. Novo export default que engloba o conteúdo com o Suspense
-export default function RelatoriosPage() {
-  return (
-    <Suspense fallback={
-        <div className="flex h-screen w-full items-center justify-center">
-            <RefreshCcw className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    }>
-      <RelatoriosContent />
-    </Suspense>
   )
 }
