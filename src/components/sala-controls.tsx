@@ -48,7 +48,7 @@ export function SalaControls() {
          
         </div>
          <Button className="w-40" onClick={() => router.push("/cadastroSalas")}>
-                Nova Sala
+                + Nova Sala
             </Button>
       </div>
     </div>

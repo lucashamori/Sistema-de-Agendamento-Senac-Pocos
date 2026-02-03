@@ -1,9 +1,12 @@
 "use client"
 
+import * as React from "react"
 import {
   ColumnDef,
+  SortingState,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
 
@@ -25,10 +28,25 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  
+  // AQUI ESTÁ A MUDANÇA:
+  // Inicializamos o array com a coluna "codigo" e desc: false (crescente)
+  const [sorting, setSorting] = React.useState<SortingState>([
+    {
+      id: "codigo", // Deve ser igual ao accessorKey definido em columns.tsx
+      desc: false,  // false = A-Z (Crescente), true = Z-A (Decrescente)
+    }
+  ])
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      sorting,
+    },
   })
 
   return (

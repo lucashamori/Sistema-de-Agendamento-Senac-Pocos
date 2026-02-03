@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2, ArrowUpDown } from "lucide-react" // Importar ArrowUpDown
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,9 +25,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
-import { updateSalaAction, deleteSalaAction } from "@/app/actions/salas" // Ajuste o caminho se necessário
+import { updateSalaAction, deleteSalaAction } from "@/app/actions/salas"
 
-// Tipo baseado no retorno da getSalasAction
 export type Sala = {
   id: number
   nome: string
@@ -38,7 +37,19 @@ export type Sala = {
 export const columns: ColumnDef<Sala>[] = [
   {
     accessorKey: "codigo",
-    header: "Código",
+    // Cabeçalho transformado em Botão de Ordenação
+    header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-3" // Ajuste visual para alinhar à esquerda
+          >
+            Código
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+    },
     cell: ({ row }) => <span className="font-mono font-medium">{row.getValue("codigo")}</span>,
   },
   {
