@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react" // 1. Importar useMemo
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -62,6 +62,24 @@ export function FormularioSala({ unidades, areas, className, ...props }: Formula
   const [open, setOpen] = useState(false)
   const [dadosParaConfirmar, setDadosParaConfirmar] = useState<FormValues | null>(null)
   
+  // 2. Criar listas ordenadas com useMemo
+  const areasOrdenadas = useMemo(() => {
+    return [...areas].sort((a, b) => {
+      // 1. Se o item 'a' for "Outros", ele deve ir para depois (retorna 1)
+      if (a.descricaoArea === "Outros") return 1;
+      
+      // 2. Se o item 'b' for "Outros", o item 'a' deve vir antes (retorna -1)
+      if (b.descricaoArea === "Outros") return -1;
+
+      // 3. Para todos os outros casos, usa a ordem alfabética padrão
+      return a.descricaoArea.localeCompare(b.descricaoArea);
+    });
+  }, [areas]);
+
+  const unidadesOrdenadas = useMemo(() => {
+    return [...unidades].sort((a, b) => a.descricaoUnidade.localeCompare(b.descricaoUnidade));
+  }, [unidades]);
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -127,13 +145,12 @@ export function FormularioSala({ unidades, areas, className, ...props }: Formula
             {/* Cabeçalho */}
             <div className="flex flex-col items-center gap-2">
               <h1 className="text-xl font-bold">Cadastro de Salas</h1>
-              <p className="text-sm text-muted-foreground">Cadastre novos laboratórios ou salas</p>
+              
             </div>
 
             <div className="flex flex-col gap-6">
               
               {/* Código da Sala */}
-              {/* Usando a estrutura grid gap-2 igual ao FormularioUsuario */}
               <FormField
                 control={form.control}
                 name="codigoSala"
@@ -199,7 +216,8 @@ export function FormularioSala({ unidades, areas, className, ...props }: Formula
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {unidades.map((unidade) => (
+                        {/* 3. Usar a lista ordenada de unidades */}
+                        {unidadesOrdenadas.map((unidade) => (
                           <SelectItem key={unidade.idUnidade} value={String(unidade.idUnidade)}>
                             {unidade.descricaoUnidade}
                           </SelectItem>
@@ -225,7 +243,8 @@ export function FormularioSala({ unidades, areas, className, ...props }: Formula
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {areas.map((area) => (
+                        {/* 4. Usar a lista ordenada de áreas */}
+                        {areasOrdenadas.map((area) => (
                           <SelectItem key={area.idArea} value={String(area.idArea)}>
                             {area.descricaoArea}
                           </SelectItem>

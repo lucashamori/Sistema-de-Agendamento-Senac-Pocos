@@ -101,7 +101,7 @@ export function LoginForm({
             id="email" 
             name="email" // Importante para o FormData pegar o valor
             type="email" 
-            placeholder="m@exemplo.com" 
+            placeholder="nome@mg.senac.br" 
             required 
             disabled={loading} // Trava enquanto carrega
           />

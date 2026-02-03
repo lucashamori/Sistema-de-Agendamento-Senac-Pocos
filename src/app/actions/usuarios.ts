@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db";
-import { usuarios, perfis } from "@/db/migrations/schema"; 
+import { usuarios, perfis, unidades } from "@/db/migrations/schema"; // Importando unidades
 import { asc, eq, ilike, or, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { adminAuth } from "@/lib/firebase-admin"
@@ -22,10 +22,15 @@ export async function getUsuariosAction(filtros?: FiltrosUsuario) {
         ativo: usuarios.ativo,
         idPerfil: usuarios.idPerfil,
         nomePerfil: perfis.descricaoPerfil,
-        departamento: usuarios.departamento // 1. ADICIONADO AQUI
+        departamento: usuarios.departamento,
+        // 1. Buscando dados da Unidade
+        idUnidade: usuarios.idUnidade, 
+        nomeUnidade: unidades.descricaoUnidade, 
       })
       .from(usuarios)
       .leftJoin(perfis, eq(usuarios.idPerfil, perfis.idPerfil))
+      // 2. Join com tabela Unidades
+      .leftJoin(unidades, eq(usuarios.idUnidade, unidades.idUnidade))
       .$dynamic();
 
     const conditions = [];
@@ -61,11 +66,12 @@ export async function getUsuariosAction(filtros?: FiltrosUsuario) {
   }
 }
 
-// 2. ATUALIZADO A ASSINATURA DA FUNÇÃO E O UPDATE
+// 3. Atualizado para receber e salvar idUnidade
 export async function updateUsuarioAction(id: number, data: { 
     nome: string; 
     email: string; 
     idPerfil: number; 
+    idUnidade: number; // Campo obrigatório
     departamento?: string | null 
 }) {
   try {
@@ -75,11 +81,11 @@ export async function updateUsuarioAction(id: number, data: {
         nome: data.nome,
         email: data.email,
         idPerfil: data.idPerfil,
-        departamento: data.departamento // Inserido no banco
+        idUnidade: data.idUnidade, // Salva a nova unidade
+        departamento: data.departamento 
       })
       .where(eq(usuarios.idUsuario, id));
 
-    // Revalida a página para atualizar a tabela imediatamente
     revalidatePath("/cadastroUsuarios/exibirUsuarios");
     
     return { success: true };
@@ -106,9 +112,8 @@ export async function toggleStatusUsuarioAction(id: number, novoStatus: boolean)
 
 export async function deleteUsuarioAction(id: number) {
   try {
-    // 1. Buscar o UID do usuário no banco antes de excluir
     const usuarioParaDeletar = await db
-      .select({ uid: usuarios.uidFirebase }) // Certifique-se que o nome da coluna é uidFirebase ou uid
+      .select({ uid: usuarios.uidFirebase })
       .from(usuarios)
       .where(eq(usuarios.idUsuario, id))
       .limit(1);
@@ -119,18 +124,15 @@ export async function deleteUsuarioAction(id: number) {
 
     const uid = usuarioParaDeletar[0].uid;
 
-    // 2. Excluir do Firebase Auth (se tiver UID)
     if (uid) {
       try {
         await adminAuth.deleteUser(uid);
         console.log(`Usuário ${uid} excluído do Firebase.`);
       } catch (firebaseError) {
-        console.error("Erro ao excluir do Firebase (pode já não existir):", firebaseError);
-        // Não damos throw aqui para garantir que exclua do banco mesmo se falhar no firebase (limpeza de orfãos)
+        console.error("Erro ao excluir do Firebase:", firebaseError);
       }
     }
 
-    // 3. Excluir do Banco de Dados (Neon)
     await db.delete(usuarios).where(eq(usuarios.idUsuario, id));
 
     revalidatePath("/cadastroUsuarios/exibirUsuarios");

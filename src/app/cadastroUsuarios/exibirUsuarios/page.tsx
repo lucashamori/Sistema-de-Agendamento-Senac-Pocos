@@ -1,16 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { DataTable } from "./data-table"
 import { UserControls } from "@/components/user-controls"
-
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { getUsuariosAction } from "@/app/actions/usuarios"
 import { listarUnidades, listarPerfis } from "@/app/actions/admin" 
-
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 
@@ -29,10 +22,15 @@ export default async function Page(props: { searchParams: SearchParams }) {
     listarPerfis()
   ])
 
-  // Formata os perfis para o formato simples esperado pelo DataTable/Columns
   const perfisFormatados = perfis.map(p => ({
       id: p.idPerfil,
       nome: p.descricaoPerfil
+  }))
+
+  // 1. Formatar unidades para o select (id, nome)
+  const unidadesFormatadas = unidades.map(u => ({
+      id: u.idUnidade,
+      nome: u.descricaoUnidade
   }))
     
   return (
@@ -50,7 +48,7 @@ export default async function Page(props: { searchParams: SearchParams }) {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Exibir Usuários</BreadcrumbPage>
+                  <BreadcrumbPage>Consultar Usuários</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -61,8 +59,12 @@ export default async function Page(props: { searchParams: SearchParams }) {
           <div className="container mx-auto py-6 px-4 md:py-10 space-y-4">
               <UserControls unidades={unidades} perfis={perfis} />
               
-              {/* Passamos perfisFormatados para permitir a edição de perfil */}
-              <DataTable data={data} perfis={perfisFormatados} />
+              {/* 2. Passar unidadesFormatadas para o DataTable */}
+              <DataTable 
+                data={data} 
+                perfis={perfisFormatados} 
+                unidades={unidadesFormatadas} 
+              />
           </div>
         </div>
         

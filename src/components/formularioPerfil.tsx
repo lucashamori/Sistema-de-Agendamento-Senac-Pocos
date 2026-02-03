@@ -94,7 +94,7 @@ export function FormularioPerfil({ className, ...props }: React.ComponentPropsWi
             {/* Cabeçalho */}
             <div className="flex flex-col items-center gap-2">
               <h1 className="text-xl font-bold">Cadastro de Perfis</h1>
-              <p className="text-sm text-muted-foreground">Defina novos níveis de acesso</p>
+      
             </div>
 
             <div className="flex flex-col gap-6">

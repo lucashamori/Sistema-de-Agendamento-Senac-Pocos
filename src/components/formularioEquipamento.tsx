@@ -132,7 +132,7 @@ export function FormularioEquipamento({ salas, className, ...props }: Formulario
             {/* Cabeçalho */}
             <div className="flex flex-col items-center gap-2">
               <h1 className="text-xl font-bold">Cadastro de Equipamentos</h1>
-              <p className="text-sm text-muted-foreground">Cadastre novos itens e vincule a uma sala</p>
+            
             </div>
 
             <div className="flex flex-col gap-6">

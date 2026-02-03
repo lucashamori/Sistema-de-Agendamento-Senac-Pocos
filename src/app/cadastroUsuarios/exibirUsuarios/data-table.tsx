@@ -19,16 +19,18 @@ import { getColumns, Usuario } from "./columns"
 
 interface DataTableProps {
   data: Usuario[]
-  perfis: { id: number; nome: string }[] // Nova prop necessária para o modal
+  perfis: { id: number; nome: string }[]
+  unidades: { id: number; nome: string }[] // 1. Recebe prop unidades
 }
 
 export function DataTable({
   data,
   perfis, 
+  unidades // 2. Desestrutura prop
 }: DataTableProps) {
   
-  // Gera as colunas passando as opções de perfis
-  const columns = getColumns(perfis)
+  // 3. Passa unidades para o getColumns
+  const columns = getColumns(perfis, unidades)
 
   const table = useReactTable({
     data,
