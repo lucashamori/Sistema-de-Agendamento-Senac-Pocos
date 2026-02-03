@@ -95,7 +95,7 @@ export function FormularioUsuario({
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2">
             <h1 className="text-xl font-bold">Cadastro de Usuários</h1>
-            <p className="text-sm text-muted-foreground">Cadastre Docentes, Coordenadores ou Admins</p>
+            
           </div>
           <div className="flex flex-col gap-6">
             
@@ -106,7 +106,7 @@ export function FormularioUsuario({
 
             <div className="grid gap-2">
               <Label htmlFor="email">Email Corporativo</Label>
-              <Input id="email" name="email" type="email" placeholder="usuario@senac.com.br" required disabled={loading} />
+              <Input id="email" name="email" type="email" placeholder="nome@mg.senac.br" required disabled={loading} />
             </div>
 
             {/* 3. INPUT DE DEPARTAMENTO ADICIONADO AQUI */}
