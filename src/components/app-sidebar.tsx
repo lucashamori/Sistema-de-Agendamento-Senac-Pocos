@@ -11,13 +11,13 @@ import {
   Monitor,
   Building,
   LayoutGrid,
-  UserStar,
   Info
 } from "lucide-react"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+// Removemos a dependência do usePathname para expansão automática
+// import { usePathname } from "next/navigation"
 
-import { useUser } from "@/components/user-provider" // Seu UserProvider criado anteriormente
+import { useUser } from "@/components/user-provider"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -27,10 +27,8 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-  SidebarSeparator,
 } from "@/components/ui/sidebar"
 
-// ... (DATA_MENU, ADMIN_ONLY_MENUS, INFO_MENUS mantidos iguais) ...
 const DATA_MENU = {
   teams: [],
   navMain: [
@@ -109,63 +107,52 @@ const DATA_MENU = {
 const ADMIN_ONLY_MENUS = ["Usuários", "Perfis", "Unidades", "Salas", "Equipamentos", "Cadastros"];
 const INFO_MENUS = ["Sobre"];
 
+// 1. ESTADO INICIAL: Tudo começa FALSE (fechado)
+const INITIAL_GROUPS_STATE = DATA_MENU.navMain.reduce((acc, item) => {
+    acc[item.title] = false;
+    return acc;
+}, {} as Record<string, boolean>);
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   
   const { isAdmin, userData, isLoading } = useUser() 
-  const pathname = usePathname()
+  
+  // 2. STATE
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>(INITIAL_GROUPS_STATE)
 
-  // 1. ESTADO DE PERSISTÊNCIA (Dicionário: { "Agendamento": true, "Salas": false })
-  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({})
-
-  // 2. CARREGAR DO CACHE AO INICIAR
+  // 3. CARREGAR DO CACHE (Roda apenas uma vez no mount)
   React.useEffect(() => {
+    // Tenta ler o cache do usuário
     const saved = localStorage.getItem("sidebar-open-groups")
     if (saved) {
       try {
-        setOpenGroups(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+        // Se existir histórico, aplica. Se não, mantém o INITIAL_GROUPS_STATE (tudo fechado)
+        setOpenGroups(prev => ({ ...prev, ...parsed }))
       } catch (e) {
         console.error("Erro ao ler cache da sidebar", e)
       }
     }
+    // OBS: Removemos a lógica de isHydrated + pathname.
+    // Agora o menu obedece estritamente ao Cache ou ao Padrão (Fechado).
   }, [])
 
-  // 3. SINCRONIZAR COM A URL (Se eu navego, o grupo da página TEM que abrir)
-  React.useEffect(() => {
-    // Descobre qual grupo deve estar ativo baseado na URL
-    const activeGroup = DATA_MENU.navMain.find(item => 
-        item.items?.some(subItem => pathname === subItem.url || pathname.startsWith(`${subItem.url}/`))
-    );
-
-    if (activeGroup) {
-        setOpenGroups(prev => {
-            // Se já está aberto, não faz nada (evita re-render desnecessário)
-            if (prev[activeGroup.title]) return prev;
-            
-            // Se estava fechado, abre e salva no cache
-            const newState = { ...prev, [activeGroup.title]: true }
-            localStorage.setItem("sidebar-open-groups", JSON.stringify(newState))
-            return newState
-        })
-    }
-  }, [pathname])
-
-  // 4. FUNÇÃO DE TOGGLE (Chamada quando o usuário clica no menu)
+  // 4. FUNÇÃO DE TOGGLE (Salva a preferência do usuário)
   const handleToggle = (title: string, isOpen: boolean) => {
       setOpenGroups(prev => {
-          const newState = { ...prev, [title]: isOpen }
-          localStorage.setItem("sidebar-open-groups", JSON.stringify(newState))
-          return newState
+        const newState = { ...prev, [title]: isOpen }
+        localStorage.setItem("sidebar-open-groups", JSON.stringify(newState))
+        return newState
       })
   }
 
   const { menuGeral, menuAdmin, menuInfo } = React.useMemo(() => {
     if (isLoading) return { menuGeral: [], menuAdmin: [], menuInfo: [] };
 
-    // Mapeia os itens aplicando o estado 'isActive' baseado no nosso estado local (openGroups)
     const mapWithState = (items: typeof DATA_MENU.navMain) => {
         return items.map(item => ({
             ...item,
-            // AQUI ESTÁ A MÁGICA: O estado vem do nosso dicionário openGroups
+            // O estado vem puramente do openGroups (Cache ou Inicial)
             isActive: !!openGroups[item.title] 
         }))
     }
@@ -185,7 +172,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const info = allItems.filter(item => INFO_MENUS.includes(item.title));
 
     return { menuGeral: geral, menuAdmin: admin, menuInfo: info }
-  }, [isAdmin, isLoading, openGroups]) // openGroups é dependência agora
+  }, [isAdmin, isLoading, openGroups])
 
   if (isLoading) return null; 
 
@@ -203,19 +190,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       
       <SidebarContent className="overflow-x-hidden">
-        {/* Passamos o handleToggle para o NavMain */}
         <NavMain items={menuGeral} label="Agendamento" onToggle={handleToggle} />
 
         {menuAdmin.length > 0 && (
           <>
-            
             <NavMain items={menuAdmin} label="Gerenciamento" onToggle={handleToggle} />
           </>
         )}
 
         {menuInfo.length > 0 && (
           <>
-             
              <NavMain items={menuInfo} label="Informações" onToggle={handleToggle} />
           </>
         )}

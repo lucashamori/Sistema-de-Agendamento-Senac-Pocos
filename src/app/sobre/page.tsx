@@ -109,9 +109,8 @@ export default function SobrePage() {
               </CardHeader>
               <CardContent className="space-y-4 text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 <p>
-                  Este projeto nasce da necessidade de mitigar erros operacionais decorrentes do uso de ferramentas manuais, 
-                  como planilhas compartilhadas, que anteriormente causavam duplicidade de reservas e dificuldades na gestão 
-                  da informação.
+                  Este projeto nasce da necessidade de mitigar erros operacionais decorrentes do uso de ferramentas manuais,
+                  como planilhas compartilhadas, que causavam dificuldades na Gestão da Informação.
                 </p>
                 <p>
                   O sistema funciona como uma <strong>Aplicação Web Progressiva (PWA)</strong>, acessível via computadores e 

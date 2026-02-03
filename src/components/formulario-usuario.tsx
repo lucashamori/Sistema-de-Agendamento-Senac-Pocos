@@ -109,11 +109,6 @@ export function FormularioUsuario({
               <Input id="email" name="email" type="email" placeholder="nome@mg.senac.br" required disabled={loading} />
             </div>
 
-            {/* 3. INPUT DE DEPARTAMENTO ADICIONADO AQUI */}
-            <div className="grid gap-2">
-              <Label htmlFor="departamento">Departamento</Label>
-              <Input id="departamento" name="departamento" type="text" placeholder="Ex: Tecnologia da Informação" disabled={loading} />
-            </div>
             
             <div className="grid gap-2">
               <Label htmlFor="unidade">Unidade</Label>
@@ -129,6 +124,12 @@ export function FormularioUsuario({
                     ))}
                   </SelectContent>
               </Select>
+            </div>
+
+             
+            <div className="grid gap-2">
+              <Label htmlFor="departamento">Departamento</Label>
+              <Input id="departamento" name="departamento" type="text" placeholder="Ex: Tecnologia da Informação" disabled={loading} />
             </div>
 
             <div className="grid gap-2">

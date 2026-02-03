@@ -136,7 +136,8 @@ export default function MeusAgendamentosPage() {
     return laboratorios.find(l => l.id === id)?.nome || `Lab ${id}`
   }, [laboratorios])
 
-  // 3. LOGICA CHECKLIST
+
+// 3. LOGICA CHECKLIST
   const handleOpenReport = async (itemOrGroup: Agendamento | GroupedItem, isSeries: boolean) => {
       setIsReportOpen(true);
       setReportLoading(true); 
@@ -168,7 +169,14 @@ export default function MeusAgendamentosPage() {
       try {
           if (targetLabId) {
              const equipamentos = await getEquipamentosDaSalaAction(targetLabId);
-             setReportData({ equipamentos: equipamentos || [], dadosAgendamento: agendamentoInfo });
+             
+             
+             // Verifica se o array existe e filtra onde ativo é true
+             const equipamentosAtivos = equipamentos 
+                ? equipamentos.filter((eq: any) => eq.ativo === true) 
+                : [];
+             
+             setReportData({ equipamentos: equipamentosAtivos, dadosAgendamento: agendamentoInfo });
           } else {
              setReportData({ equipamentos: [], dadosAgendamento: agendamentoInfo });
           }
