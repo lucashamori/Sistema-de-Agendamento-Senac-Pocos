@@ -75,7 +75,7 @@ export const getColumns = (salasOptions: { id: number, nome: string, codigo: str
           // 3. -ml-2: Compensa visualmente o padding padrão da tabela para alinhar perfeitamente com a célula
           className="hover:bg-transparent px-0 justify-start font-semibold text-foreground"
         >
-          Sala Vinculada
+          Sala
           <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground" />
         </Button>
       )
@@ -213,7 +213,7 @@ function CellAction({ equipamento, salasOptions }: CellActionProps) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Descrição</Label>
+              <Label>Descrição do Equipamento</Label>
               <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -233,7 +233,7 @@ function CellAction({ equipamento, salasOptions }: CellActionProps) {
                 </div>
             </div>
             <div className="grid gap-2">
-                <Label>Sala Vinculada</Label>
+                <Label>Sala</Label>
                 <Select value={idSala} onValueChange={setIdSala}>
                     <SelectTrigger><SelectValue placeholder="Selecione a sala" /></SelectTrigger>
                     <SelectContent>
