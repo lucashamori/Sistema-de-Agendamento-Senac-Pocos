@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { salas, agendamentos, usuarios, turmas, areas, unidades, equipamentos, checklists, perfis } from "./schema";
+import { salas, agendamentos, usuarios, turmas, areas, unidades, checklists, equipamentos, perfis } from "./schema";
 
 export const agendamentosRelations = relations(agendamentos, ({one, many}) => ({
 	sala: one(salas, {
@@ -65,17 +65,17 @@ export const unidadesRelations = relations(unidades, ({many}) => ({
 	usuarios: many(usuarios),
 }));
 
-export const equipamentosRelations = relations(equipamentos, ({one}) => ({
-	sala: one(salas, {
-		fields: [equipamentos.idSala],
-		references: [salas.idSala]
-	}),
-}));
-
 export const checklistsRelations = relations(checklists, ({one}) => ({
 	agendamento: one(agendamentos, {
 		fields: [checklists.idAgendamento],
 		references: [agendamentos.idAgendamento]
+	}),
+}));
+
+export const equipamentosRelations = relations(equipamentos, ({one}) => ({
+	sala: one(salas, {
+		fields: [equipamentos.idSala],
+		references: [salas.idSala]
 	}),
 }));
 

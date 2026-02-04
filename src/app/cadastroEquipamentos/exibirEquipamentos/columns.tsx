@@ -213,7 +213,7 @@ function CellAction({ equipamento, salasOptions }: CellActionProps) {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Descrição do Equipamento</Label>
+              <Label>Descrição</Label>
               <Input value={descricao} onChange={(e) => setDescricao(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">

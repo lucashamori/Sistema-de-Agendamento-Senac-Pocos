@@ -62,6 +62,7 @@ export const salas = pgTable("salas", {
 	idArea: bigint("id_area", { mode: "number" }).notNull(),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
 	idUnidade: bigint("id_unidade", { mode: "number" }).notNull(),
+	status: boolean().default(true).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.idArea],
@@ -81,6 +82,25 @@ export const perfis = pgTable("perfis", {
 	descricaoPerfil: varchar("descricao_perfil", { length: 50 }).notNull(),
 	isAdmin: boolean("is_admin").default(false).notNull(),
 });
+
+export const checklists = pgTable("checklists", {
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idChecklist: bigint("id_checklist", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "checklists_id_checklist_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
+	dataChecklist: timestamp("data_checklist", { withTimezone: true, mode: 'string' }).defaultNow(),
+	materialOk: boolean("material_ok").default(false).notNull(),
+	observacao: text(),
+	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
+	idAgendamento: bigint("id_agendamento", { mode: "number" }).notNull(),
+	disciplina: varchar({ length: 255 }),
+	limpezaOk: boolean("limpeza_ok").default(true).notNull(),
+	status: varchar({ length: 50 }).default('aberto').notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.idAgendamento],
+			foreignColumns: [agendamentos.idAgendamento],
+			name: "fk_checklist_agendamento"
+		}).onDelete("cascade"),
+]);
 
 export const turmas = pgTable("turmas", {
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
@@ -121,24 +141,6 @@ export const equipamentos = pgTable("equipamentos", {
 			foreignColumns: [salas.idSala],
 			name: "fk_equipamentos_sala"
 		}).onUpdate("cascade"),
-]);
-
-export const checklists = pgTable("checklists", {
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idChecklist: bigint("id_checklist", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity({ name: "checklists_id_checklist_seq", startWith: 1, increment: 1, minValue: 1, maxValue: 9223372036854775807, cache: 1 }),
-	dataChecklist: timestamp("data_checklist", { withTimezone: true, mode: 'string' }).defaultNow(),
-	materialOk: boolean("material_ok").default(false).notNull(),
-	observacao: text(),
-	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	idAgendamento: bigint("id_agendamento", { mode: "number" }).notNull(),
-	disciplina: varchar({ length: 255 }),
-	limpezaOk: boolean("limpeza_ok").default(true).notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.idAgendamento],
-			foreignColumns: [agendamentos.idAgendamento],
-			name: "fk_checklist_agendamento"
-		}).onDelete("cascade"),
 ]);
 
 export const usuarios = pgTable("usuarios", {

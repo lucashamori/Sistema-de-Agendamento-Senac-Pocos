@@ -1,28 +1,26 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { DataTable } from "./data-table"
-import { SalaControls } from "@/components/sala-controls" // Importe o componente criado acima
-
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-
-import { columns } from "./columns"
-import { getSalasAction } from "@/app/actions/salas" // Ajuste o caminho da action
-
+import { SalaControls } from "@/components/sala-controls"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 
-// Ajuste para Next.js 15: searchParams como Promise
+// Actions
+import { getSalasAction, getAreasOptionsAction, getUnidadesOptionsAction } from "@/app/actions/salas"
+
 type SearchParams = Promise<{ term?: string }>
 
 export default async function Page(props: { searchParams: SearchParams }) {
   const params = await props.searchParams;
+  const termoBusca = params.term || "";
 
-  // Busca os dados filtrados no servidor
-  const data = await getSalasAction(params.term)
-    
+  // Busca TUDO no servidor (Paralelo)
+  const [areasOptions, unidadesOptions, data] = await Promise.all([
+    getAreasOptionsAction(),
+    getUnidadesOptionsAction(),
+    getSalasAction(termoBusca)
+  ]);
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -33,13 +31,9 @@ export default async function Page(props: { searchParams: SearchParams }) {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink >Salas</BreadcrumbLink>
-                </BreadcrumbItem>
+                <BreadcrumbItem className="hidden md:block"><BreadcrumbLink href="#">Salas</BreadcrumbLink></BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Consultar Salas</BreadcrumbPage>
-                </BreadcrumbItem>
+                <BreadcrumbItem><BreadcrumbPage>Consultar Salas</BreadcrumbPage></BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
@@ -47,11 +41,15 @@ export default async function Page(props: { searchParams: SearchParams }) {
         
         <div className="flex-1">
           <div className="container mx-auto py-6 px-4 md:py-10 space-y-4">
-             {/* Controles: Filtros e Botão Nova Sala */}
-             <SalaControls />
+             {/* Passa as opções para os controles (Botão Novo) */}
+             <SalaControls areas={areasOptions} unidades={unidadesOptions} />
              
-             {/* Tabela de Dados */}
-             <DataTable columns={columns} data={data} />
+             {/* Passa as opções e dados para a tabela. A tabela gera as colunas. */}
+             <DataTable 
+                data={data} 
+                areasOptions={areasOptions} 
+                unidadesOptions={unidadesOptions} 
+             />
           </div>
         </div>
         
