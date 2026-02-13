@@ -1,76 +1,74 @@
-# 🧪 LabManager - Sistema de Agendamento de Laboratórios
+# LabManager - Sistema de Agendamento de Salas e Laboratórios
 
-![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow)
-![License](https://img.shields.io/badge/License-MIT-blue)
+![Status](https://img.shields.io/badge/Status-Concluído-green)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-336791)
+![Drizzle ORM](https://img.shields.io/badge/ORM-Drizzle-C5F74F)
 
-O **LabManager** é uma aplicação web desenvolvida para otimizar e controlar o agendamento de laboratórios escolares (focado no contexto do Senac Minas). O sistema resolve problemas de conflitos de horários, gestão de equipamentos e controle de acesso de docentes e coordenadores.
+## 📖 Sobre o Projeto
 
-##  Tecnologias Utilizadas
+O **Sistema de Agendamento de Salas** é uma Aplicação Web Progressiva (PWA) desenvolvida para modernizar e centralizar a gestão de agendamentos de laboratórios e recursos didáticos. O projeto foi concebido para substituir o uso de planilhas manuais, mitigando problemas críticos como duplicidade de reservas, falta de integridade de dados e ausência de mobilidade para os docentes[cite: 2, 3].
 
-O projeto utiliza uma stack moderna, focada em performance e escalabilidade Serverless.
-
-* **Frontend & Backend:** [Next.js 14+](https://nextjs.org/) (App Router & Server Actions)
-* **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-* **Estilização:** [Tailwind CSS](https://tailwindcss.com/) & [Shadcn/ui](https://ui.shadcn.com/)
-* **Banco de Dados:** [Neon Database](https://neon.tech/) (PostgreSQL Serverless)
-* **ORM:** [Drizzle ORM](https://orm.drizzle.team/)
-* **Autenticação:** [Firebase Auth](https://firebase.google.com/)
-* **Hospedagem:** [Vercel](https://vercel.com/)
-
-## ⚙️ Funcionalidades Principais
-
-* ✅ **Login Híbrido:** Autenticação via Firebase integrada com permissões no PostgreSQL.
-* 📅 **Agendamento Inteligente:** Sistema de calendário com **trava nativa de banco de dados** (`EXCLUDE constraint`) que impede fisicamente agendamentos duplicados na mesma sala/horário.
-* 🛡️ **Controle de Acesso (RBAC):**
-    * **Administrador:** Acesso total (Aprovar, Cancelar, Gerir Usuários).
-    * **Docente:** Solicitar agendamentos e realizar Checklists.
-    * **Coordenador:** Gestão de inventário e equipamentos.
-    * **Consulta:** Visualização apenas (Alunos).
-* 📋 **Checklist de Sala:** Controle de entrega da sala e materiais após o uso.
+A solução foca em **"Security by Design"** e alta performance, utilizando uma arquitetura moderna baseada em Serverless e renderização híbrida.
 
 ---
 
-## 🛠️ Como rodar o projeto localmente
+## 🚀 Tecnologias Utilizadas
 
-Siga os passos abaixo para configurar o ambiente de desenvolvimento.
+O projeto foi construído sobre uma stack moderna, priorizando escalabilidade e tipagem estática[cite: 25, 27]:
 
-### 1. Pré-requisitos
-* Node.js (v18 ou superior)
-* Conta no [Neon.tech](https://neon.tech) (Postgres)
-* Projeto no [Firebase Console](https://console.firebase.google.com/)
+- **Frontend:** React, Next.js 14 (App Router), Tailwind CSS, Shadcn/ui.
+- **Backend:** Next.js Server Actions (arquitetura sem API exposta).
+- **Banco de Dados:** PostgreSQL (Serverless via Neon Tech).
+- **ORM:** Drizzle ORM (Type-safe).
+- **Autenticação:** Firebase Auth (Google Provider) + RBAC Customizado.
+- **Infraestrutura:** Vercel (Edge Network) + Integração CI/CD.
 
-### 2. Clonar o repositório e instalar dependências
+---
 
-```bash
-git clone (https://github.com/alunosDesenvolvimentoSenac/projeto-integrador.git)
-cd projeto-integrador
-npm install
-```
+## ✨ Funcionalidades Principais
 
-### 3. Configurar Variáveis de Ambiente
+### 📅 Agendamento Inteligente
+- **Validação em Tempo Real:** O sistema verifica conflitos de horário no banco de dados antes de efetivar qualquer reserva[cite: 13].
+- **Agendamento em Lote:** Permite reservar uma sala para múltiplos dias ou semanas recorrentes em uma única operação.
+- **Feedback Visual:** Uso de cores para distinguir turnos (Manhã/Tarde/Noite) e estados (Pendente/Confirmado) [cite: 251-255].
 
-Crie um arquivo .env na raiz do projeto e preencha com suas chaves:
+### 🛡️ Controle de Acesso e Segurança (RBAC)
+O sistema implementa uma separação estrita entre autenticação (quem você é) e autorização (o que você pode fazer)[cite: 140]:
+- **Administrador:** Gerenciamento total (CRUD), aprovação de reservas e relatórios.
+- **Coordenador:** Visualização ampliada e gestão de equipamentos.
+- **Docente:** Solicitação de agendamentos e checklist de uso.
 
-```bash
-# --- NEON DATABASE (Pegar no Console do Neon) ---
-# Selecione a opção "Pooled connection" se disponível
-DATABASE_URL="postgres://usuario:senha@ep-exemplo.aws.neon.tech/labmanager?sslmode=require"
+### 📱 Experiência do Usuário
+- **Design Responsivo:** Interface adaptável para desktops e dispositivos móveis.
+- **Soft Delete:** Exclusão lógica de usuários e registros para manter histórico e integridade referencial[cite: 195].
+- **Login Institucional:** Integração com Google/Firebase para acesso facilitado[cite: 16].
 
-# --- FIREBASE CONFIG (Pegar no Console do Firebase > Project Settings) ---
-NEXT_PUBLIC_FIREBASE_API_KEY="AIzaSy..."
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="seu-app.firebaseapp.com"
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="seu-app"
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="seu-app.firebasestorage.app"
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="123..."
-NEXT_PUBLIC_FIREBASE_APP_ID="1:123..."
-```
+---
 
-### 4. Sincronizar Banco de Dados (Drizzle)
-```bash
-npx drizzle-kit introspect
-```
+## 🏗️ Arquitetura e Engenharia de Dados
 
-### 5. Rodar o servidor
-```bash
-npm run dev
-```
+### Modelagem de Dados
+O banco de dados relacional foi normalizado para garantir a integridade. []As principais entidades incluem [cite: 58-91]:
+- **Agendamentos:** Núcleo do sistema, com timestamps precisos e status (Pendente, Confirmado).
+- **Usuários & Perfis:** Vínculo lógico entre o UID do Firebase e as permissões locais.
+- **Infraestrutura:** Tabelas para Unidades, Salas e Equipamentos interligadas.
+
+### Server Actions
+Diferente de APIs REST tradicionais, o projeto utiliza **Server Actions** do Next.js. Isso permite que o código de backend (como queries ao banco de dados) seja executado diretamente no servidor, garantindo segurança e eliminando a necessidade de gerenciar endpoints públicos.
+
+---
+
+## 🤝 Contexto do Projeto
+Este projeto foi desenvolvido originalmente como um Projeto Integrador no Senac Minas.
+
+### Minha Atuação:
+Atuei como Full Stack Developer e Scrum Master, sendo responsável por:
+
+- Definição da arquitetura Next.js e integração com Neon DB.
+- Implementação das regras de negócio de agendamento e validação de conflitos.
+- Configuração do pipeline de CI/CD na Vercel.
+- Modelagem do banco de dados e migrações com Drizzle ORM.
+
+
